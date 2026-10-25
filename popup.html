@@ -67,7 +67,7 @@
       transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, color 0.25s;
       animation: voidtabPulse 3s ease-in-out infinite;
     }
-    .btn-voidtab:hover {
+    .btn-trio-void:hover {
       background: rgba(156, 163, 175, 0.18);
       border-color: rgba(226, 232, 240, 0.8);
       color: #F9FAFB;
@@ -191,6 +191,35 @@
       margin-bottom: 14px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.35);
     }
+    :root { --bg:#090d18; --surface:rgba(255,255,255,.045); --surface-hover:rgba(255,255,255,.085); --primary:#818cf8; --primary-hover:#a5b4fc; --border:rgba(148,163,184,.16); --text-muted:#9aa8bd; }
+    body { width:380px; max-height:600px; overflow-y:auto; color:#edf2ff; background:radial-gradient(ellipse at 88% -12%,rgba(91,104,220,.18),transparent 44%),linear-gradient(155deg,#0b1020,#080b13 72%); scrollbar-color:rgba(148,163,184,.35) transparent; }
+    body::-webkit-scrollbar { width:7px; } body::-webkit-scrollbar-thumb { background:rgba(148,163,184,.28); border-radius:8px; }
+    .header { padding:16px 14px 13px; background:transparent; border-bottom:0; }
+    .header h2 { display:flex; align-items:center; justify-content:center; gap:9px; color:#e8eaff; font-size:16px; letter-spacing:.08em; }
+    .header h2::before { content:"✦"; display:grid; place-items:center; width:25px; height:25px; border-radius:50%; color:#d7dcff; font-size:17px; background:radial-gradient(circle,rgba(167,139,250,.32),rgba(30,41,59,.12) 70%); box-shadow:0 0 16px rgba(129,140,248,.2); }
+    .btn-trio-void { margin-top:0; min-height:40px; border-radius:10px; border-color:rgba(129,140,248,.38); background:linear-gradient(110deg,rgba(99,102,241,.22),rgba(56,189,248,.1)); color:#f3f4ff; text-shadow:none; box-shadow:inset 0 1px rgba(255,255,255,.08),0 8px 24px rgba(4,7,18,.24); animation:none; }
+    .btn-trio-void:hover { background:linear-gradient(110deg,rgba(99,102,241,.32),rgba(56,189,248,.16)); border-color:rgba(165,180,252,.55); box-shadow:0 8px 22px rgba(4,7,18,.3); }
+    body > div[style*="margin: 0 16px 10px"] { margin:0 14px 11px !important; padding:11px 12px !important; border-color:var(--border) !important; border-radius:12px !important; background:rgba(255,255,255,.035) !important; }
+    #lbl-ntp-mode { color:#c5d0e2 !important; font-size:11px !important; font-weight:700; } #useDefaultNtpCb { width:15px !important; height:15px; accent-color:#818cf8; }
+    .tabs { margin:0 14px; border:1px solid var(--border); border-radius:10px; padding:3px; background:rgba(0,0,0,.16); }
+    .tab-btn { padding:9px 0; border:0; border-radius:7px; font-size:12px; } .tab-btn.active { color:#dce1ff; border:0; background:rgba(129,140,248,.16); }
+    .tab-content { padding:13px 14px 16px; } .btn { border-radius:9px; transition:background .16s ease,border-color .16s ease,transform .16s ease; }
+    .btn:focus-visible,.tab-btn:focus-visible,summary:focus-visible,select:focus-visible { outline:2px solid #a5b4fc; outline-offset:2px; }
+    .btn-save-sticky { top:0; margin:0 0 11px; padding:8px 12px; border:1px solid rgba(165,180,252,.28); background:rgba(99,102,241,.92); box-shadow:0 6px 18px rgba(3,6,18,.42); }
+    .site-settings { overflow:hidden; margin-bottom:13px; border:1px solid rgba(129,140,248,.2); border-radius:12px; background:linear-gradient(145deg,rgba(99,102,241,.07),rgba(255,255,255,.025)); }
+    .site-settings > summary { min-height:46px; padding:11px 12px; display:flex; align-items:center; gap:9px; list-style:none; cursor:pointer; color:#e3e8ff; font-size:12px; font-weight:700; }
+    .site-settings > summary::-webkit-details-marker { display:none; } .site-settings > summary:hover { background:rgba(255,255,255,.035); }
+    .site-settings-icon { color:#a5b4fc; font-size:16px; } .summary-chevron { margin-inline-start:auto; color:#9aa8bd; font-size:15px; transition:transform .18s ease; }
+    .site-settings[open] .summary-chevron { transform:rotate(180deg); } .site-settings-body { padding:0 11px 11px; border-top:1px solid rgba(148,163,184,.1); }
+    .site-setting-group { margin-top:10px !important; padding:10px !important; border:1px solid rgba(148,163,184,.12) !important; border-radius:10px !important; background:rgba(3,7,18,.28) !important; }
+    .site-mode-label,.orb-setting > label { display:block; margin-bottom:7px; color:#c5d0e2; font-size:11px; font-weight:700; }
+    .site-setting-group select { padding:9px 10px; border-radius:8px; background:#111827; } #launcherModeHint { margin-top:7px; color:var(--text-muted); font-size:11px; line-height:1.5; }
+    #launcherSiteRow { margin-top:10px !important; padding-top:9px; border-top:1px solid var(--border) !important; }
+    #launcherSiteState,#musicOrbSiteState { margin-bottom:8px; color:#d8e0ef; font-size:11px; line-height:1.45; }
+    #launcherSiteToggle,.orb-setting .btn { min-height:34px; padding:7px 9px; font-size:11px; } .orb-setting > div[style*="display:flex"] { display:flex; gap:7px !important; } .orb-setting .btn { flex:1; }
+    #launcherControls { margin-top:10px; } .form-group { margin-bottom:12px; } input,select { border-radius:9px; background:rgba(3,7,18,.55); }
+    .family-ages-collapse-btn { border-radius:9px; } .backup-list,.backup-card,.contact-details { border-radius:10px; } .btn-export,.btn-import { min-height:39px; }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
   </style>
 </head>
 <body>
@@ -220,14 +249,21 @@
 
     <button id="saveSettingsBtn" class="btn btn-primary btn-save-sticky">Save Settings</button>
 
+    <details class="site-settings">
+      <summary>
+        <span class="site-settings-icon" aria-hidden="true">◎</span>
+        <span id="lbl-launcher-mode">Launcher on websites</span>
+        <span class="summary-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="site-settings-body">
     <div id="launcherControls" style="display: none; gap: 8px; margin-bottom: 10px;">
       <button id="showOnPageBtn" class="btn btn-secondary" style="flex: 1; border-color: rgba(52, 211, 153, 0.4); color: #A7F3D0;">Show (Reset)</button>
       <button id="hideOnPageBtn" class="btn btn-secondary" style="flex: 1; border-color: rgba(239, 68, 68, 0.4); color: #FCA5A5;">Hide</button>
     </div>
 
-    <div id="launcherModeBox" style="margin: 0 0 10px; padding: 10px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px;">
-      <label id="lbl-launcher-mode" for="launcherModeSelect" style="display:block; margin-bottom:6px; font-size:12px; color: var(--text-muted);">Launcher on websites</label>
-      <select id="launcherModeSelect" disabled>
+    <div id="launcherModeBox" class="site-setting-group">
+      
+      <select id="launcherModeSelect" aria-labelledby="lbl-launcher-mode" disabled>
         <option value="off">Hidden on all sites (default)</option>
         <option value="all">Show on all sites</option>
         <option value="selected">Show only on chosen sites</option>
@@ -239,7 +275,7 @@
       </div>
     </div>
 
-    <div style="margin: 0 0 10px; padding: 10px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px;">
+    <div class="site-setting-group orb-setting">
       <label id="lbl-music-orb-site" style="display:block; margin-bottom:4px; font-size:12px; color: var(--text-muted);">Music Orb on this site</label>
       <div id="musicOrbSiteState" aria-live="polite" style="font-size:12px; color: var(--text); margin-bottom:8px;">…</div>
       <div style="display:flex; gap:8px;">
@@ -247,6 +283,8 @@
         <button id="musicOrbSiteHide" type="button" class="btn btn-secondary" style="flex:1; border-color: rgba(239, 68, 68, 0.4); color: #FCA5A5;" disabled>Hide orb</button>
       </div>
     </div>
+      </div>
+    </details>
 
     <div class="form-group">
       <label id="lbl-language">App Language:</label>
