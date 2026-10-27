@@ -1091,9 +1091,9 @@ const i18nPopup = {
           chrome.tabs.query({}, (tabs) => {
             const existingTab = tabs.find(t => t.url && t.url.indexOf(voidTabUrl) === 0);
             if (existingTab) {
-              chrome.tabs.update(existingTab.id, { active: true });
+              chrome.tabs.update(existingTab.id, { active: true }, () => { void chrome.runtime.lastError; });
               if (existingTab.windowId) {
-                chrome.windows.update(existingTab.windowId, { focused: true });
+                chrome.windows.update(existingTab.windowId, { focused: true }, () => { void chrome.runtime.lastError; });
               }
             } else {
               chrome.tabs.create({ url: voidTabUrl + '?explicit=1' });

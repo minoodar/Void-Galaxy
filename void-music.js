@@ -2397,7 +2397,7 @@
     pushRemote(true);
   }
   function focusSelf() {
-    try { chrome.tabs.getCurrent(function (tab) { if (tab) { chrome.tabs.update(tab.id, { active: true }); chrome.windows.update(tab.windowId, { focused: true }); } }); } catch (e) {}
+    try { chrome.tabs.getCurrent(function (tab) { if (tab) { chrome.tabs.update(tab.id, { active: true }, function () { void chrome.runtime.lastError; }); chrome.windows.update(tab.windowId, { focused: true }, function () { void chrome.runtime.lastError; }); } }); } catch (e) {}
   }
   if (hasExt()) {
     musicCoordLog('player-page-initialized');
