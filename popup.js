@@ -1091,10 +1091,10 @@ const i18nPopup = {
           chrome.tabs.query({}, (tabs) => {
             const existingTab = tabs.find(t => t.url && t.url.indexOf(voidTabUrl) === 0);
             if (existingTab) {
-              chrome.tabs.update(existingTab.id, { active: true }, () => { void chrome.runtime.lastError; });
-              if (existingTab.windowId) {
-                chrome.windows.update(existingTab.windowId, { focused: true }, () => { void chrome.runtime.lastError; });
-              }
+              const focusRequests = [chrome.tabs.update(existingTab.id, { active: true }).catch(() => {})];
+              if (existingTab.windowId) focusRequests.push(chrome.windows.update(existingTab.windowId, { focused: true }).catch(() => {}));
+              Promise.all(focusRequests).finally(() => window.close());
+              return;
             } else {
               chrome.tabs.create({ url: voidTabUrl + '?explicit=1' });
             }

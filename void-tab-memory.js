@@ -127,7 +127,7 @@
     } else if (!window.VoidDissolve && root.dataset && root.dataset.voidBootDissolved === '1') {
       dissolved = true;
     }
-    const show = visiblePref && hasData;
+    const show = visiblePref;
     if (dissolved) {
       // Keep layout slot under stage so Goals does not jump up
       root.hidden = false;
