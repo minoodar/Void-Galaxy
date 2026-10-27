@@ -790,6 +790,63 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 
 /* ======================================================================
+   Browser toolbar indicator for the actual per-tab floating launcher state.
+   The default manifest icon stays untouched; only tabs reporting a visible
+   launcher receive the composed active icon.
+   ====================================================================== */
+var VOID_LAUNCHER_ACTION_ICONS = {
+  inactive: { 16: 'icons/icon16.png', 32: 'icons/icon32.png', 48: 'icons/icon48.png', 128: 'icons/icon128.png' },
+  active: { 16: 'icons/icon16-active.png', 32: 'icons/icon32-active.png', 48: 'icons/icon48-active.png', 128: 'icons/icon128-active.png' }
+};
+function setVoidLauncherActionIcon(tabId, visible) {
+  if (!Number.isInteger(tabId) || tabId < 0 || !chrome.action || typeof chrome.action.setIcon !== 'function') return;
+  try {
+    var result = chrome.action.setIcon(
+      { tabId: tabId, path: visible ? VOID_LAUNCHER_ACTION_ICONS.active : VOID_LAUNCHER_ACTION_ICONS.inactive },
+      function () { void chrome.runtime.lastError; }
+    );
+    if (result && typeof result.catch === 'function') result.catch(function () {});
+  } catch (e) {}
+}
+(function () {
+  if (!chrome.action || typeof chrome.action.setIcon !== 'function') return;
+  function queryTab(tabId) {
+    if (!Number.isInteger(tabId) || tabId < 0) return;
+    try {
+      chrome.tabs.sendMessage(tabId, { type: 'void-launcher-visibility-query' }, function (response) {
+        var failed = !!chrome.runtime.lastError;
+        if (failed || !response || response.ready !== true || typeof response.visible !== 'boolean') {
+          setVoidLauncherActionIcon(tabId, false);
+          return;
+        }
+        setVoidLauncherActionIcon(tabId, response.visible);
+      });
+    } catch (e) { setVoidLauncherActionIcon(tabId, false); }
+  }
+  function refreshOpenTabs() {
+    try {
+      chrome.tabs.query({}, function (tabs) {
+        if (chrome.runtime.lastError || !Array.isArray(tabs)) return;
+        tabs.forEach(function (tab) { if (tab && Number.isInteger(tab.id)) queryTab(tab.id); });
+      });
+    } catch (e) {}
+  }
+
+  chrome.runtime.onMessage.addListener(function (message, sender) {
+    if (!message || message.type !== 'void-launcher-visibility' || typeof message.visible !== 'boolean') return;
+    if (!sender || sender.id !== chrome.runtime.id || !sender.tab || !Number.isInteger(sender.tab.id)) return;
+    setVoidLauncherActionIcon(sender.tab.id, message.visible);
+  });
+  chrome.tabs.onUpdated.addListener(function (tabId, changeInfo) {
+    if (changeInfo && changeInfo.status === 'loading') setVoidLauncherActionIcon(tabId, false);
+    else if (changeInfo && changeInfo.status === 'complete') queryTab(tabId);
+  });
+  chrome.tabs.onActivated.addListener(function (activeInfo) { if (activeInfo) queryTab(activeInfo.tabId); });
+  chrome.runtime.onStartup.addListener(refreshOpenTabs);
+  chrome.runtime.onInstalled.addListener(refreshOpenTabs);
+})();
+
+/* ======================================================================
    Launcher on websites — mode-based, on-demand injection (default: off everywhere)
    ----------------------------------------------------------------------
    AI Orbit Launcher (content.js + helpers) is NOT in manifest content_scripts.
@@ -895,6 +952,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   async function showNow(tab) {
     if (!tab || tab.id == null) return { ok: false, reason: 'bad_tab' };
+    setVoidLauncherActionIcon(tab.id, false);    // wait for the content script's confirmed visible state
     if (tab.status !== 'complete') return { ok: true, injected: false, pending: true };   // the registered script injects when it finishes loading
     var p = await probe(tab.id);
     if (!p) return { ok: false, reason: 'inject_denied' };
@@ -917,6 +975,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return { ok: true, injected: true, repaired: !!p.root };
   }
   async function hideNow(tab) {
+    if (tab && Number.isInteger(tab.id)) setVoidLauncherActionIcon(tab.id, false);
     if (await ping(tab.id)) { try { await chrome.tabs.sendMessage(tab.id, { action: 'hideLauncherAnly' }); } catch (e) {} return; }
     var p = await probe(tab.id);
     if (p && p.root) { try { await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: domPurge, args: [ROOT_IDS] }); } catch (e) {} }   // dead copy: remove it

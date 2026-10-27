@@ -700,9 +700,33 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
     // Prefer <html> so React/Next route swaps of <body> children cannot wipe the launcher.
     return document.documentElement || document.body;
   }
+  let launcherVisibilityReady = false;
+  let lastLauncherVisibility = null;
+  let launcherIdleHidden = false;
+  function launcherIsActuallyVisible() {
+    if (!root.isConnected || root.style.display === 'none' || root.style.visibility === 'hidden' ||
+        root.style.opacity === '0' || root.style.pointerEvents === 'none' || root.hasAttribute('inert') || launcherIdleHidden) return false;
+    try {
+      const style = window.getComputedStyle(root);
+      return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse' &&
+        style.pointerEvents !== 'none';
+    } catch (err) { return false; }
+  }
+  function reportLauncherVisibility(force) {
+    if (!launcherVisibilityReady) return;
+    const visible = launcherIsActuallyVisible();
+    if (!force && visible === lastLauncherVisibility) return;
+    lastLauncherVisibility = visible;
+    try {
+      chrome.runtime.sendMessage({ type: 'void-launcher-visibility', visible: visible }, () => {
+        void chrome.runtime.lastError;
+      });
+    } catch (err) {}
+  }
   function mountWidget() {
     const target = getProtectedMountTarget();
     if (target) target.appendChild(mountFragment);
+    reportLauncherVisibility();
   }
   if (document.body || document.documentElement) { mountWidget(); }
   else { document.addEventListener('DOMContentLoaded', mountWidget); }
@@ -718,9 +742,17 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
       chrome.storage.local.get(['aiTreeHiddenDomains'], (res) => {
         const hiddenDomains = Array.isArray(res.aiTreeHiddenDomains) ? res.aiTreeHiddenDomains : [];
         if (hiddenDomains.includes(window.location.hostname)) root.style.display = 'none';
+        launcherVisibilityReady = true;
+        reportLauncherVisibility();
       });
+    } else {
+      launcherVisibilityReady = true;
+      reportLauncherVisibility();
     }
-  } catch (e) {}
+  } catch (e) {
+    launcherVisibilityReady = true;
+    reportLauncherVisibility();
+  }
 
   const noteTextarea = quickNoteForm.querySelector('#ai-note-text');
 
@@ -6423,6 +6455,7 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
               try { self.attachDomArtifacts(); } catch (err) {}
               try {
                 root.style.display = '';
+                reportLauncherVisibility();
                 hub.classList.remove('hub-collapsed');
                 root.classList.remove('hide-toggles');
                 if (typeof resetAutoCollapseTimer === 'function') resetAutoCollapseTimer();
@@ -6457,6 +6490,7 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
         hub.classList.remove('hub-collapsed', 'quickadd-flash');
         root.classList.remove('hide-toggles', 'dragging');
         root.style.display = '';
+        reportLauncherVisibility();
         if (!root.style.left && !root.style.bottom) {
           root.style.left = WIDGET1_DEFAULT_LEFT;
           root.style.top = 'auto';
@@ -10650,8 +10684,8 @@ let hubAutoCollapsedByPanel = false;
         if (changes.aiTreeHiddenDomains) {
           const list = Array.isArray(changes.aiTreeHiddenDomains.newValue) ? changes.aiTreeHiddenDomains.newValue : [];
           const shouldBeHidden = list.includes(window.location.hostname);
-          if (shouldBeHidden && root.style.display !== 'none') root.style.display = 'none';
-          else if (!shouldBeHidden && root.style.display === 'none' && !widgetHiddenByFullscreen) root.style.display = '';
+          if (shouldBeHidden && root.style.display !== 'none') { root.style.display = 'none'; reportLauncherVisibility(); }
+          else if (!shouldBeHidden && root.style.display === 'none' && !widgetHiddenByFullscreen) { root.style.display = ''; reportLauncherVisibility(); }
         }
         // Two-way live sync with the standalone notepad tab (see notepad.js).
         // Only overwrite when this widget's textarea isn't the one being typed in.
@@ -11904,10 +11938,12 @@ let hubAutoCollapsedByPanel = false;
       if (root.style.display !== 'none') {
         widgetHiddenByFullscreen = true;
         root.style.display = 'none';
+        reportLauncherVisibility();
       }
     } else if (widgetHiddenByFullscreen) {
       widgetHiddenByFullscreen = false;
       if (!widgetHiddenByDomain) root.style.display = '';
+      reportLauncherVisibility();
     }
   }
   document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -12066,6 +12102,7 @@ let hubAutoCollapsedByPanel = false;
   function enterIdleHidden() {
     if (idleHidden) return;
     idleHidden = true;
+    launcherIdleHidden = true;
     root.setAttribute('inert', '');
     root.style.pointerEvents = 'none';
     try {
@@ -12080,10 +12117,12 @@ let hubAutoCollapsedByPanel = false;
       if (e.clientX >= r.left - m && e.clientX <= r.right + m && e.clientY >= r.top - m && e.clientY <= r.bottom + m) touchWidgetActivity();
     };
     document.addEventListener('mousemove', idleWakeMoveHandler, { passive: true });
+    reportLauncherVisibility();
   }
   function wakeFromIdle() {
     if (!idleHidden) return;
     idleHidden = false;
+    launcherIdleHidden = false;
     lastWidgetActivityTs = Date.now();
     if (idleWakeMoveHandler) { document.removeEventListener('mousemove', idleWakeMoveHandler); idleWakeMoveHandler = null; }
     try { if (idleFadeAnim) { idleFadeAnim.cancel(); idleFadeAnim = null; } } catch (err) {}
@@ -12091,6 +12130,7 @@ let hubAutoCollapsedByPanel = false;
     root.style.pointerEvents = '';
     root.style.opacity = '';
     try { root.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, easing: 'ease-in' }); } catch (err) {}
+    reportLauncherVisibility();
   }
   if (location.protocol !== 'chrome-extension:') {
     [root, quickNoteForm, calcPanel, clockPanel, todoPanel, searchPanel].forEach((el) => {
@@ -12116,11 +12156,16 @@ let hubAutoCollapsedByPanel = false;
   }
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message && message.type === 'void-launcher-visibility-query') {
+      sendResponse({ ready: launcherVisibilityReady, visible: launcherVisibilityReady && launcherIsActuallyVisible() });
+      return;
+    }
     if (message.action === "resetFloatingMenuPositionAnly") {
       widgetHiddenByFullscreen = false;
       widgetHiddenByDomain = false;
       cinemaModeActive = false; preCinemaPos = null; root.classList.remove('is-cinema-shifted');
       root.style.display = ''; root.style.left = WIDGET1_DEFAULT_LEFT; root.style.top = 'auto'; root.style.bottom = WIDGET1_DEFAULT_BOTTOM; 
+      reportLauncherVisibility(true);
       clockManuallyPositioned = false; // کادر ساعت هم به حالت لنگرشده روی هاب برمی‌گردد
       try { if (chrome.runtime?.id) chrome.storage.sync.remove(['clockCustomX', 'clockCustomY']); } catch (err) {}
       if (isOpen) renderSpiral(); adjustNotepadPosition(); adjustCalcPosition(); adjustClockPosition(); adjustTodoPosition(); adjustSearchPosition(); adjustDotsNavPosition(); adjustHubDotsPosition();
@@ -12138,7 +12183,7 @@ let hubAutoCollapsedByPanel = false;
       }
       return true;
     }
-    if (message.action === "hideLauncherAnly") { widgetHiddenByFullscreen = false; cinemaModeActive = false; preCinemaPos = null; root.classList.remove('is-cinema-shifted'); root.style.display = 'none'; }
+    if (message.action === "hideLauncherAnly") { widgetHiddenByFullscreen = false; cinemaModeActive = false; preCinemaPos = null; root.classList.remove('is-cinema-shifted'); root.style.display = 'none'; reportLauncherVisibility(); }
     if (message.action === "getBookmarkBackups") {
       try { chrome.storage.local.get(['aiTreeBookmarkBackups'], (data) => sendResponse({ backups: data.aiTreeBookmarkBackups || [] })); return true; } catch (e) { sendResponse({ backups: [] }); }
     }

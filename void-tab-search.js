@@ -342,6 +342,7 @@
     } catch (e) { applyEngineUI({ skipPulse: true }); }
   }
 
+  if (form) form.addEventListener('submit', (e) => e.preventDefault());
   goBtn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
