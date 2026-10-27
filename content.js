@@ -5479,7 +5479,14 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
   function allBookmarksFlat() {
     const out = [];
     [linksData, linksData2, linksData3, linksData4].forEach((arr, hubIdx) => {
-      for (let i = 0; i < arr.length; i++) { if (arr[i] && arr[i].url) out.push({ link: arr[i], hub: hubIdx + 1, idx: i }); }
+      for (let i = 0; i < arr.length; i++) {
+        const link = arr[i];
+        if (!link) continue;
+        const hasTags = Array.isArray(link.tags) && link.tags.some(tag => String(tag).trim());
+        if (link.url || String(link.label || '').trim() || String(link.description || '').trim() || hasTags) {
+          out.push({ link, hub: hubIdx + 1, idx: i });
+        }
+      }
     });
     return out;
   }
@@ -5644,7 +5651,7 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
       ? allBookmarksFlat().filter(({ link }) => Array.isArray(link.tags) && link.tags.includes(activeSearchCategory))
       : allBookmarksFlat();
 
-    const matches = pool
+    const rankedMatches = pool
       .map(({ link, hub, idx }) => {
         // بدون کوئریِ متنی (فقط فیلترِ دسته فعال است)، امتیازِ عنوان صفر می‌ماند و همه هم‌رده
         // دیده می‌شوند؛ ترتیب نهایی بر اساسِ ستاره مرتب می‌شود، نه فازی‌مچ که بی‌معنا می‌شد.
@@ -5662,8 +5669,17 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
         return { link, hub, idx, score, matchedTag, matchedDesc };
       })
       .filter(x => query ? (x.score > -1 || x.matchedTag || x.matchedDesc) : true)
-      .sort((a, b) => query ? (b.score - a.score) : ((b.link.importance || 0) - (a.link.importance || 0)))
-      .slice(0, 30);
+      .sort((a, b) => query ? (b.score - a.score) : ((b.link.importance || 0) - (a.link.importance || 0)));
+
+    // Keep matching fixed core slots eligible within the result cap even when ordinary
+    // bookmarks have higher scores or importance. Preserve the existing ranking in display.
+    const compareSearchResults = (a, b) => query
+      ? (b.score - a.score)
+      : ((b.link.importance || 0) - (a.link.importance || 0));
+    const coreMatches = rankedMatches.filter(match => match.idx < 5);
+    const otherMatches = rankedMatches.filter(match => match.idx >= 5);
+    const matches = [...coreMatches, ...otherMatches.slice(0, Math.max(0, 30 - coreMatches.length))]
+      .sort(compareSearchResults);
 
     if (matches.length === 0) {
       const empty = document.createElement('li'); empty.className = 'ai-search-empty'; empty.textContent = t('searchNoResults');
@@ -5677,7 +5693,9 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
         const colorSet = colorSetForBookmark(link, idx);
         colorDot.style.background = colorSet.border; colorDot.style.boxShadow = `0 0 5px ${colorSet.glow}`;
 
-        const fav = document.createElement('img'); fav.className = 'ai-search-result-favicon'; fav.src = getFaviconUrl(link.url);
+        const fav = document.createElement('img'); fav.className = 'ai-search-result-favicon';
+        if (link.url) fav.src = getFaviconUrl(link.url);
+        else fav.style.display = 'none';
         fav.addEventListener('error', () => fav.style.display = 'none');
 
         // عنوان و توضیحات هر دو در یک خط — توضیحات داخل پرانتز و کم‌رنگ‌تر، بدون برچسبِ اضافه
@@ -5743,8 +5761,12 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
         li.addEventListener('click', (e) => {
           e.stopPropagation();
           try { if (window.LauncherSound) LauncherSound.portal(); } catch (err) {}
-          window.open(link.url, '_blank', 'noopener,noreferrer');
-          closeAllPanelsExcept(''); closeTree();
+          if (link.url) {
+            window.open(link.url, '_blank', 'noopener,noreferrer');
+            closeAllPanelsExcept(''); closeTree();
+          } else {
+            editBookmarkFromSearch(link, hub, idx);
+          }
         });
         list.appendChild(li);
       });

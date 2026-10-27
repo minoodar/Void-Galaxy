@@ -146,8 +146,8 @@
   // می‌شه. Goals دیگه داخلِ داک نیست (کنارِ Today's Echo‌ست)، ولی هم‌زمان
   // با Today پنهان/آشکار می‌شه — عمداً یه آیتمِ جدا براش توی منو نذاشتم تا
   // منو شلوغ نشه؛ یه دکمهٔ «Today» هم داک و هم Goals رو با هم کنترل می‌کنه.
-  // Goals علاوه‌براین وقتی چیزی برای نشون‌دادن نداره (hasGoals=false) هم
-  // مخفیه — این دو شرط با هم AND می‌شن.
+  // Goals remains available as an empty shell so its dissolve/restore control
+  // can participate in constellation formation even before the first goal.
   // Goals visibility is independent of Today dock (separate dissolve + own flag).
   // Menu "Today" still toggles both for convenience; dissolve buttons act separately.
   let goalsVisible = true;
@@ -198,7 +198,7 @@
         // Keep layout slot so position stays under Echo
         goalsSection.hidden = false;
         goalsSection.classList.add('ai-void-is-dissolved');
-      } else if (!goalsVisible || !hasGoals) {
+      } else if (!goalsVisible) {
         goalsSection.classList.remove('ai-void-is-dissolved');
         goalsSection.hidden = true;
       } else {
@@ -247,14 +247,14 @@ if (typeof repositionForLayoutChange === 'function') {
           }
           if (VoidDissolve.isDissolved('goals')) {
             try { VoidDissolve.restore('goals'); } catch (err) {}
-          } else if (hasGoals) {
+          } else {
             goalsVisible = true;
             applyDockVisibility();
           }
         } else {
           try { VoidDissolve.dissolve('todo'); } catch (err) {}
           // Goals travels with Today from the menu so the triad can form
-          if (hasGoals && goalsSection && !VoidDissolve.isDissolved('goals')) {
+          if (goalsSection && !VoidDissolve.isDissolved('goals')) {
             const goalsHiddenHard = goalsSection.hidden && !goalsSection.classList.contains('ai-void-is-dissolved');
             if (!goalsHiddenHard) {
               try { VoidDissolve.dissolve('goals'); } catch (err) {}
@@ -341,7 +341,7 @@ if (typeof repositionForLayoutChange === 'function') {
           if (goalsSection) {
             try { delete goalsSection.dataset.voidBootDissolved; } catch (e) {}
             goalsSection.classList.remove('ai-void-is-dissolved');
-            // keep hidden if no goals data; applyDockVisibility decides
+            // Keep the Goals shell available even when it has no cards.
           }
           try { chrome.storage.local.set({ voidGoalsVisible: true }); } catch (e) {}
           applyDockVisibility();
@@ -1231,11 +1231,15 @@ if (typeof repositionForLayoutChange === 'function') {
     }
 
     if (goalsSection && goalsList) {
+      if (goalsTitleEl) goalsTitleEl.textContent = label('todoTabGoals', 'Goals');
       hasGoals = goals.length > 0;
       if (!hasGoals) {
         goalsList.innerHTML = '';
+        const emptyGoals = document.createElement('div');
+        emptyGoals.className = 'ai-void-todo-empty';
+        emptyGoals.textContent = label('todoNoGoals', 'No goals yet — add a wish ✨');
+        goalsList.appendChild(emptyGoals);
       } else {
-        if (goalsTitleEl) goalsTitleEl.textContent = label('todoTabGoals', 'Goals');
         goalsList.innerHTML = '';
         // سقفِ سختِ ۶ هدف: هم برای این‌که گرید بدونِ اسکرول/بریدگی همیشه کامل
         // دیده بشه، هم چون بیشتر از این معمولاً یعنی تمرکز از دست رفته —

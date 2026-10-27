@@ -2268,13 +2268,8 @@
     </div>
   </div>
 
-  <!-- بخشِ Goals این‌جا زندگی می‌کنه (نه دیگه داخلِ داکِ Today) چون به‌نظرِ
-       کاربر با روحِ «Today's Echo» هم‌خوان‌تره. مستقلاً hidden/visible
-       می‌شه (بر اساسِ تعدادِ Goals) — به هیچ‌وجه به روشن/خاموش‌بودنِ خودِ
-       Echo (که بر اساسِ فعالیتِ امروزه) وابسته نیست، وگرنه با نبودِ فعالیتِ
-       امروز Goalsِ فعال هم قایم می‌شدن. id/class‌ها عمداً دست‌نخورده‌ن تا
-       void-tab-todo.js بدونِ هیچ تغییری همین‌جا پیداشون کنه و رندر کنه.
-  -->
+  <!-- Goals stays independent from Today's Echo and remains available when empty,
+       so its dissolve control can restore it and complete a constellation. -->
   <div class="ai-void-agenda-section is-goals" id="ai-void-agenda-goals-section" hidden>
     <div class="ai-void-goals-head">
       <div class="ai-void-agenda-section-title" id="ai-void-agenda-goals-title"></div>
