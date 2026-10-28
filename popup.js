@@ -378,7 +378,7 @@ const i18nPopup = {
       document.getElementById('lbl-language').textContent = t.lblLanguage;
       document.getElementById('lbl-birth').textContent = t.lblBirth;
       const hint = document.getElementById('birth-date-hint');
-      if (hint) hint.textContent = familyUiText('hint');
+      if (hint) hint.textContent = familyUiText('hint') + ' · ' + familyUiText('dateOrder');
       const addBtn = document.getElementById('family-age-add-btn');
       if (addBtn) addBtn.textContent = familyUiText('add');
       const autoHint = document.getElementById('family-ages-autosave-hint');
@@ -507,8 +507,8 @@ const i18nPopup = {
     }
     function familyUiText(key) {
       const packs = {
-        en: { namePh:'Name (e.g. Me, Dad)', yearPh:'Year', monthPh:'M', dayPh:'D', primary:'Primary (default display)', del:'Remove', add:'+ Add person', empty:'No one yet — add yourself or family members.', hint:'Year < 1500 = Jalali · else Gregorian. Mark one person as primary.', meDefault:'Me', autoSave:'Changes save automatically.', saved:'Saved' },
-        fa: { namePh:'نام (مثلاً من، پدر)', yearPh:'سال', monthPh:'ماه', dayPh:'روز', primary:'اصلی (نمایش پیش‌فرض)', del:'حذف', add:'+ افزودن فرد', empty:'هنوز کسی اضافه نشده — خودتان یا اعضای خانواده را وارد کنید.', hint:'سال < ۱۵۰۰ = شمسی · وگرنه میلادی. یک نفر را به‌عنوان اصلی انتخاب کنید.', meDefault:'من', autoSave:'تغییرات به‌صورت خودکار ذخیره می‌شوند.', saved:'ذخیره شد' },
+        en: { namePh:'Name (e.g. Me, Dad)', yearPh:'YYYY', monthPh:'MM', dayPh:'DD', yearLabel:'Year', monthLabel:'Month (1–12)', dayLabel:'Day (1–31)', dateOrder:'Date order: YYYY-MM-DD (year-month-day).', primary:'Primary (default display)', del:'Remove', add:'+ Add person', empty:'No one yet — add yourself or family members.', hint:'Year < 1500 = Jalali · else Gregorian. Mark one person as primary.', meDefault:'Me', autoSave:'Changes save automatically.', saved:'Saved' },
+        fa: { namePh:'نام (مثلاً من، پدر)', yearPh:'YYYY', monthPh:'MM', dayPh:'DD', yearLabel:'سال', monthLabel:'ماه (۱ تا ۱۲)', dayLabel:'روز (۱ تا ۳۱)', dateOrder:'ترتیب تاریخ: YYYY-MM-DD (سال-ماه-روز).', primary:'اصلی (نمایش پیش‌فرض)', del:'حذف', add:'+ افزودن فرد', empty:'هنوز کسی اضافه نشده — خودتان یا اعضای خانواده را وارد کنید.', hint:'سال < ۱۵۰۰ = شمسی · وگرنه میلادی. یک نفر را به‌عنوان اصلی انتخاب کنید.', meDefault:'من', autoSave:'تغییرات به‌صورت خودکار ذخیره می‌شوند.', saved:'ذخیره شد' },
         ar: { namePh:'الاسم', yearPh:'سنة', monthPh:'شهر', dayPh:'يوم', primary:'أساسي', del:'حذف', add:'+ إضافة شخص', empty:'لم يُضف أحد بعد.', hint:'السنة < 1500 = شمسي · وإلا ميلادي.', meDefault:'أنا', autoSave:'يتم الحفظ تلقائيًا.', saved:'تم الحفظ' },
         es: { namePh:'Nombre', yearPh:'Año', monthPh:'M', dayPh:'D', primary:'Principal', del:'Eliminar', add:'+ Añadir persona', empty:'Nadie aún.', hint:'Año < 1500 = Jalali · si no, gregoriano.', meDefault:'Yo', autoSave:'Los cambios se guardan solos.', saved:'Guardado' },
         de: { namePh:'Name', yearPh:'Jahr', monthPh:'M', dayPh:'T', primary:'Primär', del:'Entfernen', add:'+ Person hinzufügen', empty:'Noch niemand.', hint:'Jahr < 1500 = Jalali · sonst gregorianisch.', meDefault:'Ich', autoSave:'Änderungen werden automatisch gespeichert.', saved:'Gespeichert' },
@@ -599,17 +599,19 @@ const i18nPopup = {
         top.appendChild(nameIn);
         const dates = document.createElement('div');
         dates.className = 'family-age-row-dates';
-        function numInput(ph, val, min, max, onChange) {
+        function numInput(ph, val, min, max, onChange, accessibleLabel) {
           const inp = document.createElement('input');
           inp.type = 'number'; inp.placeholder = ph; inp.min = String(min); inp.max = String(max);
+          inp.setAttribute('aria-label', accessibleLabel || ph);
+          inp.title = accessibleLabel || ph;
           if (val != null && val !== '') inp.value = String(val);
           const go = () => { const n = parseInt(inp.value, 10); onChange((n >= min && n <= max) ? n : null); scheduleFamilyAutoSave(); };
           inp.addEventListener('input', go); inp.addEventListener('change', go);
           return inp;
         }
-        dates.appendChild(numInput(familyUiText('yearPh'), member.year, 1, 2200, (n) => { if (n) member.year = n; }));
-        dates.appendChild(numInput(familyUiText('monthPh'), member.month, 1, 12, (n) => { member.month = n; }));
-        dates.appendChild(numInput(familyUiText('dayPh'), member.day, 1, 31, (n) => { member.day = n; }));
+        dates.appendChild(numInput(familyUiText('yearPh'), member.year, 1, 2200, (n) => { if (n) member.year = n; }, familyUiText('yearLabel')));
+        dates.appendChild(numInput(familyUiText('monthPh'), member.month, 1, 12, (n) => { member.month = n; }, familyUiText('monthLabel')));
+        dates.appendChild(numInput(familyUiText('dayPh'), member.day, 1, 31, (n) => { member.day = n; }, familyUiText('dayLabel')));
         const actions = document.createElement('div');
         actions.className = 'family-age-row-actions';
         const primLabel = document.createElement('label');

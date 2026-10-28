@@ -3067,6 +3067,32 @@ width: 314px;
 left: auto;
 right: calc(100% + 2px);
 }
+.ai-clock-birthday-row:not([hidden]) {
+  display: flex; align-items: center; gap: 7px;
+  min-width: 0; margin: 0 0 7px; padding: 5px 6px;
+  border: 1px solid rgba(251,191,36,.2); border-radius: 8px;
+  background: rgba(251,191,36,.045);
+}
+.ai-clock-birthday-row[hidden] { display: none !important; }
+.ai-clock-birthday-label {
+  flex: 0 0 auto; color: rgba(253,230,138,.78);
+  font-size: 9px; font-weight: 800; white-space: nowrap;
+}
+.ai-clock-birthday-list {
+  display: flex; align-items: center; gap: 4px;
+  min-width: 0; overflow-x: auto; white-space: nowrap; padding-bottom: 3px;
+  scrollbar-width: thin; scrollbar-color: rgba(251,191,36,.55) rgba(251,191,36,.08);
+}
+.ai-clock-birthday-list::-webkit-scrollbar { height: 4px; }
+.ai-clock-birthday-list::-webkit-scrollbar-track { background: rgba(251,191,36,.08); border-radius: 4px; }
+.ai-clock-birthday-list::-webkit-scrollbar-thumb { background: rgba(251,191,36,.55); border-radius: 4px; }
+.ai-clock-birthday-chip {
+  flex: 0 0 auto; max-width: 132px; overflow: hidden; text-overflow: ellipsis;
+  padding: 3px 6px; border: 1px solid rgba(251,191,36,.28); border-radius: 999px;
+  background: rgba(251,191,36,.09); color: rgba(255,247,237,.88);
+  font: 600 9px/1.25 sans-serif; font-family: inherit; white-space: nowrap; cursor: pointer;
+}
+.ai-clock-birthday-chip:hover { background: rgba(251,191,36,.18); border-color: rgba(251,191,36,.55); }
 .ai-clock-marks-list { list-style: none; margin: 0 0 8px; padding: 0; max-height: 190px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
 .ai-clock-marks-list::-webkit-scrollbar { width: 4px; }
 .ai-clock-marks-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
@@ -3150,6 +3176,7 @@ right: calc(100% + 2px);
   background: rgba(251, 191, 36, 0.9) !important;
   box-shadow: 0 0 8px rgba(251, 191, 36, 0.55) !important;
 }
+.ai-mark-dot.is-birthday { font-size: 8px; }
 .ai-mark-empty { font-size: 12px; color: var(--text-muted, rgba(186,230,253,.5)); text-align: center; list-style: none; padding: 6px 0; }
 
 .ai-clock-marks-form { display: flex; flex-direction: column; gap: 7px; }
@@ -3282,6 +3309,25 @@ font-size: 12.5px; padding: 7px 9px; width: 100%; box-sizing: border-box; font-f
   border-color: #EF4444;
   background: rgba(239, 68, 68, 0.14);
   box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.55);
+}
+.day-cell.is-birthday,
+.day-cell.is-birthday.is-public-holiday {
+  border-color: #FBBF24;
+  background: rgba(251, 191, 36, 0.14);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
+}
+.day-cell.is-today.is-birthday,
+.day-cell.is-today.is-birthday.is-public-holiday {
+  border-color: #FBBF24;
+  background: rgba(251, 191, 36, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.55);
+}
+.day-cell.is-birthday .primary-day { color: #fde68a; }
+.day-cell.is-birthday::after {
+  content: '';
+  position: absolute; top: 3px; inset-inline-end: 3px;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #FBBF24; box-shadow: 0 0 5px rgba(251, 191, 36, .8);
 }
 
 .day-cell .primary-day {

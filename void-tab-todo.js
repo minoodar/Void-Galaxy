@@ -400,8 +400,9 @@ if (typeof repositionForLayoutChange === 'function') {
         const g = jalaaliToGregorian(y, m, d); gY = g.gy; gM = g.gm; gD = g.gd;
       } else { gY = y; gM = m; gD = d; }
       if (hasFull) {
-        const gDate = new Date(gY, gM - 1, gD);
-        const gStr = gDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+        const gregorianLabels = { fa: 'میلادی', ar: 'ميلادي', es: 'Greg.', de: 'Greg.', fr: 'Grég.', ja: '西暦', ru: 'григ.', tr: 'Miladi', 'zh-Hans': '公历', 'zh-Hant': '公曆', 'pt-BR': 'Greg.' };
+        const gregorianLabel = gregorianLabels[currentLang] || 'Gregorian';
+        const gStr = `${gregorianLabel} · ${gY}-${String(gM).padStart(2, '0')}-${String(gD).padStart(2, '0')}`;
         let jStr = '';
         if (typeof gregorianToJalaali === 'function') {
           const j = gregorianToJalaali(gY, gM, gD);
@@ -550,9 +551,16 @@ if (typeof repositionForLayoutChange === 'function') {
             const a = computeVoidAge(m.year, m.month, m.day);
             const row = document.createElement('div');
             row.className = 'ai-void-agenda-family-row' + (m.primary ? ' is-primary' : '');
-            row.textContent = (m.name || (m.primary ? 'Me' : '—')) + ' · ' + a + ' yrs';
             const bl = formatVoidBirthLabel(m.year, m.month, m.day);
-            if (bl) row.title = bl;
+            const summary = document.createElement('span');
+            summary.textContent = (m.name || (m.primary ? 'Me' : '—')) + ' · ' + a + ' yrs';
+            row.appendChild(summary);
+            if (bl) {
+              const birth = document.createElement('span');
+              birth.className = 'ai-void-agenda-family-birth';
+              birth.textContent = bl;
+              row.appendChild(birth);
+            }
             fam.appendChild(row);
           });
           detail.appendChild(fam);

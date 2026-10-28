@@ -511,6 +511,10 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
         </div>
       </section>
 
+      <div class="ai-clock-birthday-row" id="ai-clock-birthday-row" hidden>
+        <span class="ai-clock-birthday-label" id="ai-clock-birthday-label"></span>
+        <div class="ai-clock-birthday-list" id="ai-clock-birthday-list"></div>
+      </div>
       <ul class="ai-clock-marks-list" id="ai-clock-marks-list"></ul>
       <div class="ai-clock-marks-form">
         <!-- ردیف عنوان به همراه ستاره نشان‌دار (ماندگار) -->
@@ -877,6 +881,9 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
     dashTodoCount: clockPanel.querySelector('#ai-dash-todo-count'),
     dashNotifyDot: clockPanel.querySelector('#ai-dash-notify-dot'),
     markPanel: clockPanel.querySelector('#ai-clock-marks-panel'),
+    birthdayRow: clockPanel.querySelector('#ai-clock-birthday-row'),
+    birthdayLabel: clockPanel.querySelector('#ai-clock-birthday-label'),
+    birthdayList: clockPanel.querySelector('#ai-clock-birthday-list'),
     markList: clockPanel.querySelector('#ai-clock-marks-list'),
     markLabelInput: clockPanel.querySelector('#ai-mark-label-input'),
     smartDateInput: clockPanel.querySelector('#ai-smart-date'),
@@ -1367,8 +1374,9 @@ updateSeasonalTracker();
         let birthLabel = '';
         try {
           if (hasFullDate) {
-            const gDate = new Date(gY, gM - 1, gD);
-            birthGregorian = gDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+            const gregorianLabels = { fa: 'میلادی', ar: 'ميلادي', es: 'Greg.', de: 'Greg.', fr: 'Grég.', ja: '西暦', ru: 'григ.', tr: 'Miladi', 'zh-Hans': '公历', 'zh-Hant': '公曆', 'pt-BR': 'Greg.' };
+            const gregorianLabel = gregorianLabels[currentLang] || 'Gregorian';
+            birthGregorian = `${gregorianLabel} · ${gY}-${String(gM).padStart(2, '0')}-${String(gD).padStart(2, '0')}`;
             if (typeof gregorianToJalaali === 'function') {
               const j = gregorianToJalaali(gY, gM, gD);
               birthJalali = localizeDigits(String(j.jd)) + ' ' + J_MONTHS[Math.max(0, j.jm - 1)] + ' ' + localizeDigits(String(j.jy));
@@ -1639,6 +1647,43 @@ updateSeasonalTracker();
     return true;
   }
 
+  // تولدها از دادهٔ موجودِ عمرشمار ساخته می‌شوند و عمداً در aiTreeMarkedDays
+  // ذخیره نمی‌شوند؛ بنابراین هر عضو فقط یک رخداد نمایشی دارد و حذف عضو، تولد را هم حذف می‌کند.
+  function getBirthdayCalendarMarks() {
+    let people = Array.isArray(familyAges) ? familyAges.filter(person => person && person.year) : [];
+    const primary = people.find(person => person.primary) || people[0];
+    if (primary && (!primary.month || !primary.day) && userBirthMonth && userBirthDay) {
+      people = people.map(person => person === primary ? { ...person, month: person.month || userBirthMonth, day: person.day || userBirthDay } : person);
+    }
+    if (!people.length && userBirthYear) {
+      people = [{ id: 'legacy-primary', name: '', year: userBirthYear, month: userBirthMonth, day: userBirthDay, primary: true }];
+    }
+    const birthdayWord = langPick({ fa: 'تولد', en: 'Birthday', ar: 'عيد ميلاد', es: 'Cumpleaños', de: 'Geburtstag', fr: 'Anniversaire', ja: '誕生日', ru: 'День рождения' });
+    const familyWord = langPick({ fa: 'عضو خانواده', en: 'Family member', ar: 'أحد أفراد العائلة', es: 'Familiar', de: 'Familienmitglied', fr: 'Membre de la famille', ja: '家族', ru: 'Член семьи' });
+    const meWord = langPick({ fa: 'تولد من', en: 'My birthday', ar: 'عيد ميلادي', es: 'Mi cumpleaños', de: 'Mein Geburtstag', fr: 'Mon anniversaire', ja: '自分の誕生日', ru: 'Мой день рождения' });
+    return people.map((person, index) => {
+      const year = parseInt(person.year, 10);
+      const month = parseInt(person.month, 10);
+      const day = parseInt(person.day, 10);
+      if (!year || !Number.isInteger(month) || !Number.isInteger(day) || month < 1 || month > 12 || day < 1 || day > 31) return null;
+      const cal = year < 1500 ? 'j' : 'g';
+      try {
+        if (cal === 'j' && typeof jalaaliToGregorian === 'function' && typeof gregorianToJalaali === 'function') {
+          const g = jalaaliToGregorian(year, month, day);
+          const back = gregorianToJalaali(g.gy, g.gm, g.gd);
+          if (!back || back.jm !== month || back.jd !== day) return null;
+        } else if (cal === 'g') {
+          const date = new Date(year, month - 1, day);
+          if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) return null;
+        }
+      } catch (e) { return null; }
+      const name = String(person.name || '').trim();
+      const shortLabel = name || (person.primary ? meWord : familyWord);
+      const label = name ? `${name} · ${birthdayWord}` : (person.primary ? meWord : `${birthdayWord} · ${familyWord}`);
+      return { id: `birthday:${person.id || index}`, label, shortLabel, day, month, cal, golden: true, isBirthday: true };
+    }).filter(Boolean);
+  }
+
 function openMarkEventSheet(m) {
     if (!uiEls.markEventSheet || !m) return;
     currentOpenMarkEvent = m;
@@ -1666,7 +1711,15 @@ function openMarkEventSheet(m) {
 
     // نام ماه و قالب‌بندی ارقام بر اساس زبان فعال
     let dateStr = '';
-    if (isJ) {
+    if (m.isBirthday) {
+      const mm = localizeDigits(String(m.month).padStart(2, '0'));
+      const dd = localizeDigits(String(m.day).padStart(2, '0'));
+      dateStr = langPick({
+        fa: `ماه ${mm} · روز ${dd}`, en: `Month ${mm} · Day ${dd}`, ar: `الشهر ${mm} · اليوم ${dd}`,
+        es: `Mes ${mm} · Día ${dd}`, de: `Monat ${mm} · Tag ${dd}`, fr: `Mois ${mm} · Jour ${dd}`,
+        ja: `${mm}月 · ${dd}日`, ru: `Месяц ${mm} · день ${dd}`
+      });
+    } else if (isJ) {
       const monthName = JALALI_MONTHS_FA[m.month - 1] || '';
       dateStr = `${localizeDigits(m.day)} ${monthName}`;
     } else if (isH) {
@@ -1679,7 +1732,7 @@ function openMarkEventSheet(m) {
     }
     
     if (uiEls.markEventBadge) {
-      uiEls.markEventBadge.textContent = m.days === 0 ? '🎉' : (m.isPublic ? '🔴' : (m.golden ? '★' : '📌'));
+      uiEls.markEventBadge.textContent = m.isBirthday ? '🎂' : (m.days === 0 ? '🎉' : (m.isPublic ? '🔴' : (m.golden ? '★' : '📌')));
     }
 
     // تولتیپ تب باز/بسته‌کننده کشوی کاغذی به ۸ زبان
@@ -1694,7 +1747,7 @@ function openMarkEventSheet(m) {
     if (uiEls.markEventText) {
       uiEls.markEventText.textContent = m.label;
 
-      if (!m.isPublic) {
+      if (!m.isPublic && !m.isBirthday) {
         uiEls.markEventText.title = langPick({
           fa: 'برای ویرایش متن کلیک کنید',
           en: 'Click to edit text',
@@ -1816,12 +1869,12 @@ function openMarkEventSheet(m) {
     // یک مناسبتِ تازه باز می‌شود، تاگل از نو به حالتِ خاموش برمی‌گردد — یک
     // کلیدِ ماندگار نیست، فقط لحظهٔ تیک‌خوردنش عملِ حذف را اجرا می‌کند.
     if (uiEls.markDeleteRow && uiEls.markDeleteCb) {
-      uiEls.markDeleteRow.hidden = !!m.isPublic;
+      uiEls.markDeleteRow.hidden = !!m.isPublic || !!m.isBirthday;
       uiEls.markDeleteRow.title = t('markDeleteTitle');
       uiEls.markDeleteCb.checked = false;
       uiEls.markDeleteCb.onchange = () => {
         if (!uiEls.markDeleteCb.checked) return;
-        deleteMarkedDayById(m.id);
+        if (!m.isBirthday) deleteMarkedDayById(m.id);
         closeMarkEventSheet();
       };
     }
@@ -2163,14 +2216,40 @@ function openMarkEventSheet(m) {
   function renderMarkedDays() {
     pruneExpiredMarkedDays();
     if (!uiEls.markDotsInner) return;
+    const birthdayMarks = getBirthdayCalendarMarks();
+    const manualMarks = Array.isArray(markedDays) ? markedDays : [];
+    if (uiEls.birthdayRow && uiEls.birthdayList) {
+      uiEls.birthdayList.innerHTML = '';
+      uiEls.birthdayRow.hidden = birthdayMarks.length === 0;
+      if (birthdayMarks.length) {
+        if (uiEls.birthdayLabel) uiEls.birthdayLabel.textContent = langPick({ fa: 'تولدها', en: 'Birthdays', ar: 'أعياد الميلاد', es: 'Cumpleaños', de: 'Geburtstage', fr: 'Anniversaires', ja: '誕生日', ru: 'Дни рождения' });
+        birthdayMarks
+          .map(m => ({ ...m, days: daysUntilNext(m.day, m.month, m.cal) }))
+          .sort((a, b) => a.days - b.days)
+          .forEach(m => {
+            const chip = document.createElement('button');
+            chip.type = 'button'; chip.className = 'ai-clock-birthday-chip';
+            const mm = String(m.month).padStart(2, '0'); const dd = String(m.day).padStart(2, '0');
+            const dateLabel = langPick({ fa: `ماه ${localizeDigits(mm)} · روز ${localizeDigits(dd)}`, en: `Month ${mm} · Day ${dd}`, ar: `الشهر ${toArabicDigits(mm)} · اليوم ${toArabicDigits(dd)}` });
+            chip.textContent = `${m.shortLabel} · ${mm}-${dd}`;
+            chip.title = `${m.label} · ${dateLabel}`;
+            chip.setAttribute('aria-label', chip.title);
+            chip.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openMarkEventSheet(m);
+            });
+            uiEls.birthdayList.appendChild(chip);
+          });
+      }
+    }
     // تا ۵ مناسبت نزدیک — کلیک → کشوی کاغذی بالای تقویم
     uiEls.markDotsInner.innerHTML = '';
-    if (markedDays.length === 0) {
+    if (birthdayMarks.length === 0 && manualMarks.length === 0) {
       if (uiEls.markToggle) uiEls.markToggle.classList.remove('has-items');
       closeMarkEventSheet();
     } else {
       if (uiEls.markToggle) uiEls.markToggle.classList.add('has-items');
-      const nearestMarks = markedDays
+      const nearestMarks = manualMarks
         .map(m => ({ ...m, days: daysUntilNext(m.day, m.month, m.cal) }))
         .sort((a, b) => a.days - b.days)
         .slice(0, 5);
@@ -2179,8 +2258,8 @@ function openMarkEventSheet(m) {
         const wrap = document.createElement('div'); wrap.className = 'ai-mark-dot-wrap';
 const dot = document.createElement('button'); dot.type = 'button';
 const isExpired = !m.golden && isMarkedDayPast(m.day, m.month, m.cal);
-dot.className = 'ai-mark-dot' + (m.days === 0 ? ' is-today' : '') + (m.golden ? ' is-golden' : '') + (isExpired ? ' is-expired' : '');
-        dot.textContent = String(idx + 1);
+dot.className = 'ai-mark-dot' + (m.days === 0 ? ' is-today' : '') + (m.golden ? ' is-golden' : '') + (m.isBirthday ? ' is-birthday' : '') + (isExpired ? ' is-expired' : '');
+        dot.textContent = m.isBirthday ? '🎂' : String(idx + 1);
         dot.title = m.label;
         dot.addEventListener('mousedown', (e) => e.stopPropagation());
         dot.addEventListener('click', (e) => {
@@ -2202,9 +2281,14 @@ dot.className = 'ai-mark-dot' + (m.days === 0 ? ' is-today' : '') + (m.golden ? 
     // لیست مدیریت مناسبت‌ها داخل پنل
     if (!uiEls.markList) return;
     uiEls.markList.innerHTML = '';
-    if (markedDays.length === 0) {
-      const empty = document.createElement('li'); empty.className = 'ai-mark-empty'; empty.textContent = t('markEmpty');
+    if (!Array.isArray(markedDays) || markedDays.length === 0) {
+      const empty = document.createElement('li'); empty.className = 'ai-mark-empty';
+      empty.textContent = birthdayMarks.length
+        ? langPick({ fa: 'هنوز مناسبت موردی ثبت نشده', en: 'No one-off occasions yet', ar: 'لا توجد مناسبات يدوية بعد', es: 'Aún no hay ocasiones puntuales', de: 'Noch keine Einzeltermine', fr: 'Aucune occasion ponctuelle', ja: '個別の予定はまだありません', ru: 'Разовых событий пока нет' })
+        : t('markEmpty');
       uiEls.markList.appendChild(empty);
+      if (uiEls.markPanel) uiEls.markPanel.classList.remove('is-grown');
+      if (uiEls.markPanel && uiEls.markPanel.classList.contains('active')) positionMarksPanelSide();
       return;
     }
     markedDays.slice().sort((a, b) => daysUntilNext(a.day, a.month, a.cal) - daysUntilNext(b.day, b.month, b.cal)).forEach(m => {
@@ -3328,6 +3412,7 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
     e.stopPropagation();
     const willOpen = !uiEls.markPanel.classList.contains('active');
     if (willOpen) closeDashPanelOnly(); // فقط یکی از دو پنل کناری هم‌زمان باز باشد
+    if (willOpen) renderMarkedDays(); // ردیف تولدها و فهرست مناسبت‌ها هنگام بازشدن تازه‌سازی شوند
     uiEls.markPanel.classList.toggle('active');
     const isOpen = uiEls.markPanel.classList.contains('active');
     uiEls.markToggle.classList.toggle('is-open', isOpen);
@@ -3341,6 +3426,17 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
       positionMarksPanelSide();
     }
   });
+
+  if (uiEls.birthdayList) {
+    uiEls.birthdayList.addEventListener('wheel', (e) => {
+      const list = uiEls.birthdayList;
+      if (list.scrollWidth <= list.clientWidth) return;
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!delta) return;
+      e.preventDefault();
+      list.scrollLeft += delta;
+    }, { passive: false });
+  }
 
   if (uiEls.dashToggle) {
     uiEls.dashToggle.addEventListener('click', (e) => {
@@ -3598,6 +3694,7 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
     const startDow = first.getDay();
     const offset = preferJalali ? (startDow + 1) % 7 : startDow;
     const totalDays = daysInGregorianMonth(y, m);
+    const birthdayMarks = getBirthdayCalendarMarks();
 
     // رنگ‌بندی تقویم کلی (پاپ‌آپ) بر اساس ماه جلالیِ همان بازهٔ نمایش‌داده‌شده —
     // چون هر گرید یک ماه میلادی است ولی می‌تواند بین دو ماه جلالی مشترک باشد،
@@ -3658,11 +3755,20 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
       if (isH) return !!hijriDM && mk.day === hijriDM.hd && mk.month === hijriDM.hm;
       const isJ = mk.cal === 'j' || mk.cal === 'jalali';
       if (isJ) return mk.day === jd && mk.month === jm;
+      if (mk.isBirthday && mk.month === 2 && mk.day === 29) {
+        const isLeapYear = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+        return isLeapYear ? (gm === 2 && gd === 29) : (gm === 3 && gd === 1);
+      }
       return mk.day === gd && mk.month === gm;
     }
     function isMarkedDay(gy, gm, gd, jy, jm, jd) {
       const hijriDM = gregorianToHijriDM(gy, gm, gd);
-      return markedDays.some(mk => markMatchesGridDay(mk, gd, gm, jd, jm, hijriDM));
+      return markedDays.some(mk => markMatchesGridDay(mk, gd, gm, jd, jm, hijriDM))
+        || birthdayMarks.some(mk => markMatchesGridDay(mk, gd, gm, jd, jm, hijriDM));
+    }
+    function isBirthdayDay(gy, gm, gd, jy, jm, jd) {
+      const hijriDM = gregorianToHijriDM(gy, gm, gd);
+      return birthdayMarks.some(mk => markMatchesGridDay(mk, gd, gm, jd, jm, hijriDM));
     }
     // فقط تعطیلات رسمیِ آنلاین (شخصی نیست) — برای کادر قرمز مجزا از is-marked
     function isPublicHolidayDay(gy, gm, gd, jy, jm, jd) {
@@ -3672,10 +3778,11 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
     }
     function marksForDay(gy, gm, gd, jy, jm, jd) {
       const hijriDM = gregorianToHijriDM(gy, gm, gd);
+      const birthdays = birthdayMarks.filter(mk => markMatchesGridDay(mk, gd, gm, jd, jm, hijriDM));
       const personal = markedDays.filter(mk => markMatchesGridDay(mk, gd, gm, jd, jm, hijriDM));
       const holidays = (showPublicHolidays ? publicHolidays : []).filter(mk => markMatchesGridDay(mk, gd, gm, jd, jm, hijriDM));
-      // شخصی‌ها اول — اگر همان روز هم مناسبت شخصی هم تعطیل رسمی داشت، کلیک روی روز اول آن را نشان می‌دهد
-      return [...personal, ...holidays].map(m => ({ ...m, days: daysUntilNext(m.day, m.month, m.cal) }));
+      // تولدها اول می‌آیند تا کلیک روی روز مشترک با مناسبت دیگری، ابتدا تولد را نشان دهد.
+      return [...birthdays, ...personal, ...holidays].map(m => ({ ...m, days: daysUntilNext(m.day, m.month, m.cal) }));
     }
 
     let html = '';
@@ -3748,6 +3855,7 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
       const isToday = iso === todayISO;
       const isSelected = iso === smartDateISO;
       const isMarked = isMarkedDay(y, m, d, j.jy, j.jm, j.jd);
+      const isBirthday = isBirthdayDay(y, m, d, j.jy, j.jm, j.jd);
       const isHoliday = isPublicHolidayDay(y, m, d, j.jy, j.jm, j.jd);
       const primary = preferJalali ? toPersianDigits(j.jd) : String(d);
       const sub = preferJalali ? String(d) : String(j.jd);
@@ -3766,6 +3874,7 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
       const cls = ['day-cell'];
       if (isToday) cls.push('is-today');
       if (isMarked) cls.push('is-marked');
+      if (isBirthday) cls.push('is-birthday');
       if (isHoliday) cls.push('is-public-holiday');
       if (isSelected) cls.push('is-selected');
       html += `<div class="${cls.join(' ')}" data-iso="${iso}" data-weekday="${tip.weekdayKey}" role="button" tabindex="0">
@@ -10649,10 +10758,11 @@ let hubAutoCollapsedByPanel = false;
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'sync') {
           let langChanged = false;
+          const birthCalendarChanged = !!(changes.userBirthYear || changes.userBirthMonth || changes.userBirthDay || changes.aiTreeFamilyAges);
           if (changes.appLanguage) { currentLang = changes.appLanguage.newValue || 'en'; langChanged = true; }
-          if (changes.userBirthYear) { userBirthYear = changes.userBirthYear.newValue ? parseInt(changes.userBirthYear.newValue, 10) : null; if(clockPanel.classList.contains('active')) updateClockAge(); }
-          if (changes.userBirthMonth) { userBirthMonth = changes.userBirthMonth.newValue ? parseInt(changes.userBirthMonth.newValue, 10) : null; if(clockPanel.classList.contains('active')) updateClockAge(); }
-          if (changes.userBirthDay) { userBirthDay = changes.userBirthDay.newValue ? parseInt(changes.userBirthDay.newValue, 10) : null; if(clockPanel.classList.contains('active')) updateClockAge(); }
+          if (changes.userBirthYear) userBirthYear = changes.userBirthYear.newValue ? parseInt(changes.userBirthYear.newValue, 10) : null;
+          if (changes.userBirthMonth) userBirthMonth = changes.userBirthMonth.newValue ? parseInt(changes.userBirthMonth.newValue, 10) : null;
+          if (changes.userBirthDay) userBirthDay = changes.userBirthDay.newValue ? parseInt(changes.userBirthDay.newValue, 10) : null;
           if (changes.aiTreeFamilyAges) {
             const list = Array.isArray(changes.aiTreeFamilyAges.newValue) ? changes.aiTreeFamilyAges.newValue : [];
             familyAges = list.filter(m => m && m.year).map(m => ({
@@ -10663,7 +10773,11 @@ let hubAutoCollapsedByPanel = false;
             if (familyAges.length && !familyAges.some(m => m.primary)) familyAges[0].primary = true;
             const prim = familyAges.find(m => m.primary) || familyAges[0];
             if (prim) { userBirthYear = prim.year; userBirthMonth = prim.month; userBirthDay = prim.day; }
-            if (clockPanel.classList.contains('active')) updateClockAge();
+          }
+          if (birthCalendarChanged && clockPanel.classList.contains('active')) {
+            updateClockAge();
+            renderMarkedDays();
+            if (dualPickerOpen) renderDualGrid();
           }
           if (changes.aiTreeTodos) applyExternalTodos(changes.aiTreeTodos.newValue);
           if (changes.aiTreeMarkedDays) { markedDays = changes.aiTreeMarkedDays.newValue || []; if (clockPanel.classList.contains('active')) renderMarkedDays(); }

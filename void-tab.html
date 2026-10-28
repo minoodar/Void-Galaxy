@@ -1053,9 +1053,11 @@
         to { opacity: 1; transform: translateY(0); }
     }
     .ai-void-agenda-family-row {
+        display: flex; flex-direction: column; gap: 2px;
         font-size: 9.5px; color: rgba(199,210,254,.75); text-align: center; font-weight: 600;
         padding: 3px 6px; border-radius: 6px; background: rgba(255,255,255,0.03);
     }
+    .ai-void-agenda-family-birth { font-size: 8.5px; font-weight: 500; color: rgba(186,230,253,.65); direction: ltr; }
     .ai-void-agenda-family-row.is-primary {
         color: #A7F3D0; background: rgba(16,185,129,.1);
     }
@@ -1094,6 +1096,12 @@
         font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
         color: rgba(199,210,254,.55); margin-bottom: 5px;
     }
+    .ai-void-agenda-section.is-tasks {
+        margin-top: 3px; padding: 8px 8px 9px;
+        border: 1px solid rgba(56,189,248,.18); border-radius: 10px;
+        background: rgba(56,189,248,.045);
+    }
+    .ai-void-agenda-section.is-tasks .ai-void-agenda-section-title { color: rgba(125,211,252,.82); }
     .ai-void-agenda-events { display: grid; gap: 4px; }
     .ai-void-todo-list { display: grid; gap: 3px; }
     .ai-void-event-row {
@@ -2232,7 +2240,7 @@
       <div class="ai-void-agenda-section-title" id="ai-void-agenda-events-title"></div>
       <div class="ai-void-agenda-events" id="ai-void-agenda-events"></div>
     </div>
-    <div class="ai-void-agenda-section">
+    <div class="ai-void-agenda-section is-tasks">
       <div class="ai-void-agenda-section-title" id="ai-void-agenda-tasks-title"></div>
       <div class="ai-void-todo-list" id="ai-void-todo-list"></div>
     </div>
