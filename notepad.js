@@ -28,6 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
     promptsPanel: document.getElementById('prompts-panel'),
     promptsBar: document.getElementById('prompts-bar'),
     promptsSearchInput: document.getElementById('prompts-search-input'),
+    workNoteTabs: document.getElementById('work-note-tabs'),
+    workNoteAdd: document.getElementById('work-note-add'),
+    workNoteMore: document.getElementById('work-note-more'),
+    workNoteMoreList: document.getElementById('work-note-more-list'),
+    workNoteTodo: document.getElementById('work-note-todo'),
     emojiToggleBtn: document.getElementById('emoji-toggle-btn'),
     emojiPopover: document.getElementById('emoji-popover'),
     aiSelect: document.getElementById('ai-select'),
@@ -83,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.promptsSearchInput) els.promptsSearchInput.placeholder = t('noteTplSearchPlaceholder');
     updateTokenMeter();
     renderPrompts();
+    if (typeof renderWorkNotes === 'function') renderWorkNotes();
   }
 
   function showToast(msg) {
@@ -137,10 +143,160 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ============================= Draft text sync =============================
   let draftSaveTimer = null;
+  const WORK_NOTES_KEY = 'aiWorkNotes';
+  const WORK_NOTE_COLORS = ['amber', 'cyan', 'rose', 'violet', 'mint'];
+  let workNotes = [];
+  let activeWorkNoteId = new URLSearchParams(location.search).get('workNote') || null;
+  let scratchDraftCache = null;
+  let todoSyncTimer = null;
+
+  function workNoteLabel(key) {
+    const labels = {
+      draft: { fa: 'پیش‌نویس', en: 'Draft', ar: 'مسودة', es: 'Borrador', de: 'Entwurf', fr: 'Brouillon', ja: '下書き', ru: 'Черновик' },
+      add: { fa: 'یادداشت تازه', en: 'New note', ar: 'ملاحظة جديدة', es: 'Nueva nota', de: 'Neue Notiz', fr: 'Nouvelle note', ja: '新しいメモ', ru: 'Новая заметка' },
+      more: { fa: 'بیشتر', en: 'More', ar: 'المزيد', es: 'Más', de: 'Mehr', fr: 'Plus', ja: 'もっと', ru: 'Ещё' },
+      delete: { fa: 'حذف یادداشت', en: 'Delete note', ar: 'حذف الملاحظة', es: 'Eliminar nota', de: 'Notiz löschen', fr: 'Supprimer la note', ja: 'メモを削除', ru: 'Удалить заметку' },
+      confirm: { fa: 'این یادداشت و کار متصل به آن در Todo حذف شوند؟', en: 'Delete this note and its linked Todo item?', ar: 'هل تريد حذف هذه الملاحظة ومهمة Todo المرتبطة بها؟', es: '¿Eliminar esta nota y su tarea vinculada?', de: 'Diese Notiz und die verknüpfte Todo-Aufgabe löschen?', fr: 'Supprimer cette note et la tâche Todo liée ?', ja: 'このメモとリンクされたTodo項目を削除しますか？', ru: 'Удалить заметку и связанную задачу Todo?' },
+      todo: { fa: 'افزودن به کارها', en: 'Add to Todo', ar: 'إضافة إلى المهام', es: 'Añadir a tareas', de: 'Zu Aufgaben', fr: 'Ajouter aux tâches', ja: 'Todoに追加', ru: 'Добавить в задачи' },
+      todoShort: { fa: '＋ کارها', en: '＋ Todo', ar: '＋ مهام', es: '＋ Tareas', de: '＋ Todo', fr: '＋ Tâches', ja: '＋ Todo', ru: '＋ Задачи' },
+      todoLinkedShort: { fa: '✓ کارها', en: '✓ Todo', ar: '✓ مهام', es: '✓ Tareas', de: '✓ Todo', fr: '✓ Tâches', ja: '✓ Todo', ru: '✓ Задачи' },
+      todoLinked: { fa: 'در فهرست کارها', en: 'Already in Todo', ar: 'موجود في المهام', es: 'Ya está en tareas', de: 'Bereits in Aufgaben', fr: 'Déjà dans les tâches', ja: 'Todoに追加済み', ru: 'Уже в задачах' },
+      todoAdded: { fa: 'یادداشت به کارهای روزانه وصل شد', en: 'Note added to daily Todo', ar: 'أضيفت الملاحظة إلى المهام اليومية', es: 'Nota añadida a tareas diarias', de: 'Notiz zu täglichen Aufgaben hinzugefügt', fr: 'Note ajoutée aux tâches du jour', ja: 'メモを今日のTodoに追加しました', ru: 'Заметка добавлена в задачи на сегодня' }
+    };
+    return labels[key] && labels[key][currentLang] !== undefined ? labels[key][currentLang] : labels[key].en;
+  }
+  function makeWorkNoteId() { return 'wn_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function normalizeWorkNotes(items) {
+    return (Array.isArray(items) ? items : []).filter(n => n && typeof n.text === 'string').map((n, i) => ({
+      id: String(n.id || makeWorkNoteId()), text: n.text,
+      color: WORK_NOTE_COLORS.includes(n.color) ? n.color : WORK_NOTE_COLORS[i % WORK_NOTE_COLORS.length],
+      createdAt: Number(n.createdAt) || Date.now(), updatedAt: Number(n.updatedAt) || Number(n.createdAt) || Date.now(),
+      todoId: n.todoId ? String(n.todoId) : null
+    }));
+  }
+  function activeWorkNote() { return activeWorkNoteId ? workNotes.find(n => n.id === activeWorkNoteId) || null : null; }
+  function workNoteTitle(note, index) {
+    const first = String(note.text || '').split(/\r?\n/).map(s => s.trim()).find(Boolean);
+    return (first || (currentLang === 'fa' ? 'یادداشت' : 'Work note') + ' ' + (index + 1)).slice(0, 20);
+  }
+  function persistWorkNotes() { try { chrome.storage.local.set({ [WORK_NOTES_KEY]: workNotes }); } catch (e) {} }
+  function renderWorkNotes() {
+    if (!els.workNoteTabs) return;
+    const tabs = els.workNoteTabs; tabs.innerHTML = '';
+    const draft = document.createElement('button'); draft.type = 'button'; draft.className = 'work-note-tab work-note-draft' + (!activeWorkNoteId ? ' is-active' : '');
+    draft.textContent = workNoteLabel('draft'); draft.setAttribute('role', 'tab'); draft.setAttribute('aria-selected', String(!activeWorkNoteId));
+    draft.addEventListener('click', () => selectWorkNote(null)); tabs.appendChild(draft);
+    const sorted = workNotes.slice().sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+    sorted.slice(0, 5).forEach((note, index) => {
+      const tab = document.createElement('button'); tab.type = 'button'; tab.className = 'work-note-tab work-note-paper' + (activeWorkNoteId === note.id ? ' is-active' : '');
+      tab.dataset.color = note.color; tab.textContent = workNoteTitle(note, index); tab.title = note.text || workNoteTitle(note, index);
+      tab.setAttribute('role', 'tab'); tab.setAttribute('aria-selected', String(activeWorkNoteId === note.id));
+      tab.addEventListener('click', () => selectWorkNote(note.id)); tabs.appendChild(tab);
+    });
+    if (els.workNoteAdd) { els.workNoteAdd.title = workNoteLabel('add'); els.workNoteAdd.setAttribute('aria-label', workNoteLabel('add')); }
+    if (els.workNoteMore) {
+      els.workNoteMore.hidden = workNotes.length === 0; els.workNoteMore.textContent = workNoteLabel('more');
+      els.workNoteMore.title = workNoteLabel('more'); els.workNoteMore.setAttribute('aria-label', workNoteLabel('more'));
+    }
+    if (els.workNoteMoreList) {
+      const list = els.workNoteMoreList; list.innerHTML = '';
+      sorted.forEach((note, index) => {
+        const row = document.createElement('div'); row.className = 'work-note-more-row';
+        const open = document.createElement('button'); open.type = 'button'; open.className = 'work-note-more-open'; open.dataset.color = note.color;
+        open.textContent = workNoteTitle(note, index); open.title = note.text || open.textContent; open.addEventListener('click', () => selectWorkNote(note.id));
+        const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'work-note-more-delete'; remove.textContent = '×'; remove.title = workNoteLabel('delete');
+        remove.addEventListener('click', (event) => {
+          event.stopPropagation(); if (!window.confirm(workNoteLabel('confirm'))) return;
+          if (activeWorkNoteId === note.id) { flushCurrentNote(); clearTimeout(todoSyncTimer); activeWorkNoteId = null; els.textarea.value = scratchDraftCache || ''; }
+          chrome.storage.local.get(['aiTreeTodos'], local => chrome.storage.sync.get(['aiTreeTodos'], sync => {
+            const todos = Array.isArray(local.aiTreeTodos) ? local.aiTreeTodos : (Array.isArray(sync.aiTreeTodos) ? sync.aiTreeTodos : []);
+            const remaining = todos.filter(td => td.sourceWorkNoteId !== note.id && (!note.todoId || td.id !== note.todoId));
+            if (remaining.length !== todos.length) {
+              chrome.storage.local.set({ aiTreeTodos: remaining });
+              chrome.storage.sync.set({ aiTreeTodos: remaining });
+              try { window.__aiTreeTodosForVoid = remaining; window.dispatchEvent(new CustomEvent('ai-tree-todos-updated', { detail: remaining })); } catch (e) {}
+            }
+          }));
+          workNotes = workNotes.filter(n => n.id !== note.id); persistWorkNotes(); renderWorkNotes(); updateTokenMeter();
+        });
+        row.append(open, remove); list.appendChild(row);
+      });
+    }
+    if (els.workNoteTodo) {
+      const note = activeWorkNote();
+      const linked = !!(note && note.todoId);
+      els.workNoteTodo.textContent = linked ? workNoteLabel('todoLinkedShort') : workNoteLabel('todoShort');
+      els.workNoteTodo.title = linked ? workNoteLabel('todoLinked') : workNoteLabel('todo');
+    }
+  }
+  function saveWorkNoteText(id, text) {
+    const note = workNotes.find(n => n.id === id); if (!note) return;
+    note.text = String(text || ''); note.updatedAt = Date.now(); persistWorkNotes(); renderWorkNotes();
+    if (note.todoId) {
+      clearTimeout(todoSyncTimer);
+      todoSyncTimer = setTimeout(() => {
+        const taskText = note.text.trim(); if (!taskText) return;
+        chrome.storage.local.get(['aiTreeTodos'], local => chrome.storage.sync.get(['aiTreeTodos'], sync => {
+          const todos = Array.isArray(local.aiTreeTodos) ? local.aiTreeTodos : (Array.isArray(sync.aiTreeTodos) ? sync.aiTreeTodos : []);
+          const task = todos.find(td => td.sourceWorkNoteId === note.id || td.id === note.todoId);
+          if (task && task.text !== taskText) { task.text = taskText; chrome.storage.local.set({ aiTreeTodos: todos }); chrome.storage.sync.set({ aiTreeTodos: todos }); }
+        }));
+      }, 1200);
+    }
+  }
+  function flushCurrentNote() {
+    clearTimeout(draftSaveTimer);
+    if (activeWorkNoteId) saveWorkNoteText(activeWorkNoteId, els.textarea.value);
+    else { scratchDraftCache = els.textarea.value; try { chrome.storage.local.set({ savedPromptDraft: scratchDraftCache }); } catch (e) {} }
+  }
+  function selectWorkNote(id) {
+    if (id === activeWorkNoteId) return;
+    flushCurrentNote(); activeWorkNoteId = id || null;
+    if (els.workNoteMoreList) els.workNoteMoreList.hidden = true;
+    if (activeWorkNoteId) {
+      const note = activeWorkNote(); if (!note) { activeWorkNoteId = null; return; }
+      els.textarea.value = note.text; renderWorkNotes(); updateTokenMeter(); return;
+    }
+    renderWorkNotes();
+    if (scratchDraftCache !== null) { els.textarea.value = scratchDraftCache; updateTokenMeter(); return; }
+    chrome.storage.local.get(['savedPromptDraft'], data => { if (!activeWorkNoteId) { scratchDraftCache = data.savedPromptDraft || ''; els.textarea.value = scratchDraftCache; updateTokenMeter(); } });
+  }
+  function addWorkNote() {
+    flushCurrentNote();
+    const note = { id: makeWorkNoteId(), text: '', color: WORK_NOTE_COLORS[workNotes.length % WORK_NOTE_COLORS.length], createdAt: Date.now(), updatedAt: Date.now(), todoId: null };
+    workNotes.unshift(note); activeWorkNoteId = note.id; persistWorkNotes(); renderWorkNotes();
+    els.textarea.value = ''; updateTokenMeter(); els.textarea.focus();
+  }
+  function addCurrentNoteToTodo() {
+    const text = String(els.textarea.value || '').trim();
+    if (!text) { showToast(currentLang === 'fa' ? 'ابتدا متن یادداشت را بنویسید' : 'Write a note first'); return; }
+    let note = activeWorkNote();
+    if (!note) {
+      flushCurrentNote(); note = { id: makeWorkNoteId(), text, color: WORK_NOTE_COLORS[workNotes.length % WORK_NOTE_COLORS.length], createdAt: Date.now(), updatedAt: Date.now(), todoId: null };
+      workNotes.unshift(note); activeWorkNoteId = note.id; persistWorkNotes(); renderWorkNotes();
+    } else { note.text = text; note.updatedAt = Date.now(); }
+    chrome.storage.local.get(['aiTreeTodos'], local => chrome.storage.sync.get(['aiTreeTodos'], sync => {
+      const todos = Array.isArray(local.aiTreeTodos) ? local.aiTreeTodos : (Array.isArray(sync.aiTreeTodos) ? sync.aiTreeTodos : []);
+      let task = todos.find(td => td.sourceWorkNoteId === note.id || td.id === note.todoId);
+      if (task) task.text = text;
+      else { task = { id: 'td_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text, done: false, type: 'daily', createdAt: Date.now(), sourceWorkNoteId: note.id }; todos.push(task); }
+      note.todoId = task.id; persistWorkNotes();
+      chrome.storage.local.set({ aiTreeTodos: todos }); chrome.storage.sync.set({ aiTreeTodos: todos });
+      try { window.__aiTreeTodosForVoid = todos; window.dispatchEvent(new CustomEvent('ai-tree-todos-updated', { detail: todos })); } catch (e) {}
+      renderWorkNotes(); showToast(workNoteLabel('todoAdded'));
+    }));
+  }
+  if (els.workNoteAdd) els.workNoteAdd.addEventListener('click', addWorkNote);
+  if (els.workNoteMore && els.workNoteMoreList) els.workNoteMore.addEventListener('click', () => { els.workNoteMoreList.hidden = !els.workNoteMoreList.hidden; });
+  if (els.workNoteTodo) els.workNoteTodo.addEventListener('click', addCurrentNoteToTodo);
+
   function saveDraftDebounced() {
     clearTimeout(draftSaveTimer);
+    const noteId = activeWorkNoteId;
+    const value = els.textarea.value;
     draftSaveTimer = setTimeout(() => {
-      try { chrome.storage.local.set({ savedPromptDraft: els.textarea.value }); } catch (e) {}
+      if (noteId) saveWorkNoteText(noteId, value);
+      else { scratchDraftCache = value; try { chrome.storage.local.set({ savedPromptDraft: value }); } catch (e) {} }
     }, 400);
   }
   els.textarea.addEventListener('input', () => {
@@ -153,7 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!els.textarea.value.trim()) return;
     els.textarea.value = '';
     updateTokenMeter();
-    try { chrome.storage.local.set({ savedPromptDraft: '' }); } catch (e) {}
+    if (activeWorkNoteId) saveWorkNoteText(activeWorkNoteId, '');
+    else { scratchDraftCache = ''; try { chrome.storage.local.set({ savedPromptDraft: '' }); } catch (e) {} }
     showToast(t('notepadToastCleared'));
   });
 
@@ -1201,10 +1358,18 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local') {
-        if (changes.savedPromptDraft && document.activeElement !== els.textarea) {
+        if (changes.savedPromptDraft && !activeWorkNoteId && document.activeElement !== els.textarea) {
           const newVal = changes.savedPromptDraft.newValue || '';
+          scratchDraftCache = newVal;
           if (newVal !== els.textarea.value) { els.textarea.value = newVal; updateTokenMeter(); }
         }
+        if (changes[WORK_NOTES_KEY]) {
+          workNotes = normalizeWorkNotes(changes[WORK_NOTES_KEY].newValue);
+          const note = activeWorkNote();
+          if (note && document.activeElement !== els.textarea) { els.textarea.value = note.text; updateTokenMeter(); }
+          renderWorkNotes();
+        }
+        if (changes.aiTreeTodos) renderWorkNotes();
         if (changes.noteTextAlign && changes.noteTextAlign.newValue) setAlign(changes.noteTextAlign.newValue, false);
         if (changes.noteFontSize && changes.noteFontSize.newValue) applyFontSize(changes.noteFontSize.newValue, false);
         if (changes[CUSTOM_PROMPT_KEY]) { customPrompts = changes[CUSTOM_PROMPT_KEY].newValue || []; renderPrompts(); }
@@ -1236,9 +1401,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   try {
     chrome.storage.local.get(
-      ['savedPromptDraft', 'noteTextAlign', 'noteFontSize', CUSTOM_PROMPT_KEY, PROMPT_OVERRIDE_KEY, PROMPT_HIDDEN_KEY, 'aiTreeEmojiMemory'],
+      ['savedPromptDraft', 'aiWorkNotes', 'noteTextAlign', 'noteFontSize', CUSTOM_PROMPT_KEY, PROMPT_OVERRIDE_KEY, PROMPT_HIDDEN_KEY, 'aiTreeEmojiMemory'],
       (data) => {
-        els.textarea.value = (data && typeof data.savedPromptDraft === 'string') ? data.savedPromptDraft : '';
+        scratchDraftCache = (data && typeof data.savedPromptDraft === 'string') ? data.savedPromptDraft : '';
+        workNotes = normalizeWorkNotes(data && data[WORK_NOTES_KEY]);
+        const requestedNote = activeWorkNote();
+        if (requestedNote) els.textarea.value = requestedNote.text;
+        else { activeWorkNoteId = null; els.textarea.value = scratchDraftCache; }
         lastValueForEmoji = els.textarea.value;
         if (data && data.noteTextAlign) setAlign(data.noteTextAlign, false);
         _localLoadData = data || {};
@@ -1248,6 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data && data[PROMPT_OVERRIDE_KEY] && typeof data[PROMPT_OVERRIDE_KEY] === 'object') promptOverrides = data[PROMPT_OVERRIDE_KEY];
         if (data && Array.isArray(data[PROMPT_HIDDEN_KEY])) promptHiddenIds = data[PROMPT_HIDDEN_KEY];
         if (data && Array.isArray(data.aiTreeEmojiMemory) && data.aiTreeEmojiMemory.length) favoriteEmojis = data.aiTreeEmojiMemory.slice(0, 12);
+        renderWorkNotes();
         updateTokenMeter();
         renderPrompts();
       }
@@ -1270,8 +1440,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const fromWindow = params.get('fromWindow');
   els.backBtn.addEventListener('click', () => {
     try {
-      clearTimeout(draftSaveTimer);
-      chrome.storage.local.set({ savedPromptDraft: els.textarea.value }, () => {
+      flushCurrentNote();
+      const flush = activeWorkNoteId ? { [WORK_NOTES_KEY]: workNotes } : { savedPromptDraft: els.textarea.value };
+      chrome.storage.local.set(flush, () => {
         if (fromTab) {
           chrome.runtime.sendMessage({
             action: 'returnToParentTab',

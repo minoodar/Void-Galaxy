@@ -136,6 +136,28 @@
     flex-shrink: 0;
   }
   .prompts-panel.open { display: flex; }
+  .work-notes-nav { display: flex; align-items: center; gap: 6px; min-height: 42px; margin: 0 0 7px; flex-shrink: 0; }
+  .work-note-tabs { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .work-note-tabs::-webkit-scrollbar { display: none; }
+  .work-note-tab, .work-note-action { height: 36px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--surface); font: inherit; font-size: 10px; font-weight: 650; cursor: pointer; }
+  .work-note-tab:hover, .work-note-action:hover { filter: brightness(1.2); transform: translateY(-1px); }
+  .work-note-draft { min-width: 58px; padding: 0 8px; }
+  .work-note-paper { width: 48px; height: 40px; padding: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; border-top: 3px solid var(--work-color); box-shadow: 0 3px 10px rgba(0,0,0,.18); }
+  .work-note-paper[data-color="amber"], .work-note-more-open[data-color="amber"] { --work-color: #fbbf24; background: rgba(251,191,36,.15); }
+  .work-note-paper[data-color="cyan"], .work-note-more-open[data-color="cyan"] { --work-color: #22d3ee; background: rgba(34,211,238,.13); }
+  .work-note-paper[data-color="rose"], .work-note-more-open[data-color="rose"] { --work-color: #fb7185; background: rgba(251,113,133,.14); }
+  .work-note-paper[data-color="violet"], .work-note-more-open[data-color="violet"] { --work-color: #a78bfa; background: rgba(167,139,250,.15); }
+  .work-note-paper[data-color="mint"], .work-note-more-open[data-color="mint"] { --work-color: #34d399; background: rgba(52,211,153,.14); }
+  .work-note-tab.is-active { outline: 1px solid var(--work-color, rgba(52,211,153,.7)); outline-offset: 1px; }
+  .work-note-draft.is-active { border-color: rgba(52,211,153,.65); background: rgba(16,185,129,.18); }
+  .work-note-action { min-width: 34px; padding: 0 8px; }
+  .work-note-more-list:not([hidden]) { display: grid; gap: 5px; max-height: 110px; overflow-y: auto; margin: 0 0 7px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,.22); }
+  .work-note-more-row { display: flex; gap: 5px; }
+  .work-note-more-open { flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid var(--border); border-inline-start: 3px solid var(--work-color); border-radius: 6px; text-align: start; color: var(--text); background: var(--surface); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .work-note-more-delete { border: 0; border-radius: 5px; color: #fca5a5; background: rgba(248,113,113,.1); font: inherit; cursor: pointer; }
+  .work-note-todo-btn { border: 1px solid rgba(52,211,153,.35); border-radius: 6px; padding: 3px 8px; color: #a7f3d0; background: rgba(16,185,129,.12); font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+  .work-note-todo-btn:hover { background: rgba(16,185,129,.23); }
+  .work-note-tab:focus-visible, .work-note-action:focus-visible, .work-note-more-open:focus-visible, .work-note-more-delete:focus-visible, .work-note-todo-btn:focus-visible { outline: 2px solid rgba(52,211,153,.85); outline-offset: 2px; }
   .prompts-search-input {
     width: 100%;
     box-sizing: border-box;
@@ -563,12 +585,20 @@
       <div class="prompts-bar" id="prompts-bar"></div>
     </div>
 
+    <div class="work-notes-nav" aria-label="Work notes">
+      <div class="work-note-tabs" id="work-note-tabs" role="tablist"></div>
+      <button type="button" class="work-note-action" id="work-note-add" title="New work note" aria-label="New work note">＋</button>
+      <button type="button" class="work-note-action" id="work-note-more" title="More notes" aria-label="More notes" hidden>…</button>
+    </div>
+    <div class="work-note-more-list" id="work-note-more-list" hidden></div>
+
     <div class="editor-wrap">
       <textarea id="note-text" dir="auto" placeholder=""></textarea>
     </div>
 
     <div class="status-row">
       <span id="token-meter">0 chars · 0 tokens</span>
+      <button type="button" class="work-note-todo-btn" id="work-note-todo">＋ Todo</button>
       <span id="voice-status" class="voice-status-inline" data-state="" aria-live="polite"></span>
     </div>
     <div class="voice-progress-track" id="voice-progress-track" hidden>

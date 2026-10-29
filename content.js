@@ -48,6 +48,12 @@
   let currentHubIndex = 1; 
   let hubNavDirection = 'forward'; // remembers last portal click direction so a "return trip" keeps showing 🌍 in the same slot
   let todosData = [];
+  let workNotesData = [];
+  let activeWorkNoteId = null;
+  let scratchDraftCache = null;
+  let workNoteTodoSyncTimer = null;
+  const WORK_NOTES_STORAGE_KEY = 'aiWorkNotes';
+  const WORK_NOTE_COLORS = ['amber', 'cyan', 'rose', 'violet', 'mint'];
   let activeTodoTab = 'daily';
   let addForTomorrow = false;
   const TODO_DAILY_TTL_MS = 24 * 60 * 60 * 1000;
@@ -690,6 +696,19 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
     <span class="ai-star-edit" data-value="4">★</span>
     <span class="ai-star-edit" data-value="5">★</span>`;
 
+  const workNoteDock = document.createElement('div');
+  workNoteDock.id = 'ai-work-note-dock';
+  workNoteDock.className = 'ai-work-note-dock';
+  workNoteDock.hidden = true;
+  workNoteDock.setAttribute('aria-label', 'Work note shortcuts');
+  const workNoteDockList = document.createElement('div');
+  workNoteDockList.className = 'ai-work-note-dock-list';
+  workNoteDock.appendChild(workNoteDockList);
+  const workNoteDockMoreList = document.createElement('div');
+  workNoteDockMoreList.className = 'ai-work-note-dock-more-list';
+  workNoteDockMoreList.hidden = true;
+  workNoteDock.appendChild(workNoteDockMoreList);
+
   root.classList.add('orbit-root'); hub.classList.add('orbit-hub');
   root.appendChild(quantumBloom);
   addNodeBtn.classList.add('orbit-add-node'); inlineForm.classList.add('orbit-inline-form');
@@ -698,7 +717,7 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
   root.appendChild(hub); root.appendChild(addNodeBtn);
 
   const mountFragment = document.createDocumentFragment();
-  mountFragment.append(root, inlineForm, quickNoteForm, calcPanel, clockPanel, todoPanel, searchPanel, tierDotsNav, hubDotsNav, toastBox, starEditorPopup);
+  mountFragment.append(root, inlineForm, quickNoteForm, calcPanel, clockPanel, todoPanel, searchPanel, tierDotsNav, hubDotsNav, toastBox, starEditorPopup, workNoteDock);
 
   function getProtectedMountTarget() {
     // Prefer <html> so React/Next route swaps of <body> children cannot wipe the launcher.
@@ -918,6 +937,52 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
     clockQuoteSourceTabs: clockPanel.querySelector('#ai-clock-quote-source-tabs'),
   };
 
+  // Drag the compact birthday strip horizontally without starting the parent
+  // clock-panel drag. Keep ordinary clicks on a birthday chip intact.
+  if (uiEls.birthdayList) {
+    const birthdayList = uiEls.birthdayList;
+    let birthdayPointer = null;
+    let suppressBirthdayClick = false;
+    birthdayList.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      if (event.pointerType !== 'mouse' || event.button !== 0) return;
+      birthdayPointer = { id: event.pointerId, x: event.clientX, scrollLeft: birthdayList.scrollLeft, moved: false };
+      try { birthdayList.setPointerCapture(event.pointerId); } catch (e) {}
+    });
+    // The clock panel uses mousedown to drag itself; stop that compatibility
+    // event too, or the row and its container compete for the same gesture.
+    birthdayList.addEventListener('mousedown', (event) => event.stopPropagation());
+    birthdayList.addEventListener('pointermove', (event) => {
+      if (!birthdayPointer || event.pointerId !== birthdayPointer.id) return;
+      const delta = event.clientX - birthdayPointer.x;
+      if (Math.abs(delta) > 5) {
+        birthdayPointer.moved = true;
+        birthdayList.classList.add('is-dragging');
+        event.preventDefault();
+      }
+      if (birthdayPointer.moved) birthdayList.scrollLeft = birthdayPointer.scrollLeft - delta;
+    });
+    const finishBirthdayPointer = (event) => {
+      if (!birthdayPointer || (event && event.pointerId !== birthdayPointer.id)) return;
+      if (birthdayPointer.moved) {
+        suppressBirthdayClick = true;
+        setTimeout(() => { suppressBirthdayClick = false; }, 0);
+      }
+      const pointerId = birthdayPointer.id;
+      birthdayPointer = null;
+      birthdayList.classList.remove('is-dragging');
+      try { if (birthdayList.hasPointerCapture(pointerId)) birthdayList.releasePointerCapture(pointerId); } catch (e) {}
+    };
+    birthdayList.addEventListener('pointerup', finishBirthdayPointer);
+    birthdayList.addEventListener('pointercancel', finishBirthdayPointer);
+    birthdayList.addEventListener('click', (event) => {
+      if (!suppressBirthdayClick || event.detail === 0) return;
+      suppressBirthdayClick = false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+  }
+
   // --- Zen Toolbar: SVG icons + dock magnification + microphone wiring ---
   // (تعریف‌شده در toolbar-icons.js / toolbar-dock.js / voice-engine.js —
   // هر سه به‌عنوان content_scripts قبل از content.js لود می‌شوند)
@@ -950,9 +1015,11 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
         e.preventDefault();
         try {
           if (!chrome.runtime?.id) return;
-          const flush = { savedPromptDraft: noteTextarea ? noteTextarea.value : '' };
+          const workNoteId = activeWorkNoteId;
+          flushCurrentNoteValue();
+          const flush = workNoteId ? { [WORK_NOTES_STORAGE_KEY]: workNotesData } : { savedPromptDraft: noteTextarea ? noteTextarea.value : '' };
           chrome.storage.local.set(flush, () => {
-            chrome.runtime.sendMessage({ action: 'openNotepadTab', autoVoice: true }, () => {
+            chrome.runtime.sendMessage({ action: 'openNotepadTab', autoVoice: true, workNoteId }, () => {
               // No response handler needed; swallow "no receiver" errors when SW is asleep/waking.
               void chrome.runtime.lastError;
             });
@@ -1635,6 +1702,7 @@ updateSeasonalTracker();
     if (JSON.stringify(incoming) === JSON.stringify(todosData)) return;
     todosData = incoming; migrateTodos(); pruneExpiredDailyTodos(); publishTodosToVoidTab();
     if (todoPanel.classList.contains('active')) renderTodos();
+    if (typeof renderWorkNotes === 'function') renderWorkNotes();
   }
 
 
@@ -7273,9 +7341,11 @@ let hubAutoCollapsedByPanel = false;
       e.preventDefault();
       try {
         if (!chrome.runtime?.id) return;
-        const flush = { savedPromptDraft: noteTextarea ? noteTextarea.value : '' };
+        const workNoteId = activeWorkNoteId;
+        flushCurrentNoteValue();
+        const flush = workNoteId ? { [WORK_NOTES_STORAGE_KEY]: workNotesData } : { savedPromptDraft: noteTextarea ? noteTextarea.value : '' };
         chrome.storage.local.set(flush, () => {
-          chrome.runtime.sendMessage({ action: 'openNotepadTab' }, () => {
+          chrome.runtime.sendMessage({ action: 'openNotepadTab', workNoteId }, () => {
             // No response handler needed; swallow "no receiver" errors when SW is asleep/waking.
             void chrome.runtime.lastError;
           });
@@ -8240,22 +8310,323 @@ let hubAutoCollapsedByPanel = false;
       .replace('{tokens}', String(estimateTokens(text)));
   }
 
+  function workNoteLabel(key) {
+    const labels = {
+      scratch: { fa: 'پیش‌نویس', en: 'Draft', ar: 'مسودة', es: 'Borrador', de: 'Entwurf', fr: 'Brouillon', ja: '下書き', ru: 'Черновик' },
+      add: { fa: 'یادداشت تازه', en: 'New note', ar: 'ملاحظة جديدة', es: 'Nueva nota', de: 'Neue Notiz', fr: 'Nouvelle note', ja: '新しいメモ', ru: 'Новая заметка' },
+      more: { fa: 'یادداشت‌های بیشتر', en: 'More notes', ar: 'ملاحظات أخرى', es: 'Más notas', de: 'Weitere Notizen', fr: 'Plus de notes', ja: '他のメモ', ru: 'Ещё заметки' },
+      moreShort: { fa: 'بیشتر', en: 'More', ar: 'المزيد', es: 'Más', de: 'Mehr', fr: 'Plus', ja: '他', ru: 'Ещё' },
+      todo: { fa: 'افزودن به کارها', en: 'Add to Todo', ar: 'إضافة إلى المهام', es: 'Añadir a tareas', de: 'Zu Aufgaben', fr: 'Ajouter aux tâches', ja: 'Todoに追加', ru: 'Добавить в задачи' },
+      todoLinked: { fa: 'در فهرست کارها', en: 'In Todo', ar: 'في المهام', es: 'En tareas', de: 'In Aufgaben', fr: 'Dans les tâches', ja: 'Todoに追加済み', ru: 'В задачах' },
+      todoShort: { fa: '＋ کارها', en: '＋ Todo', ar: '＋ مهام', es: '＋ Tareas', de: '＋ Todo', fr: '＋ Tâches', ja: '＋ Todo', ru: '＋ Задачи' },
+      todoLinkedShort: { fa: '✓ کارها', en: '✓ Todo', ar: '✓ مهام', es: '✓ Tareas', de: '✓ Todo', fr: '✓ Tâches', ja: '✓ Todo', ru: '✓ Задачи' },
+      delete: { fa: 'حذف یادداشت', en: 'Delete note', ar: 'حذف الملاحظة', es: 'Eliminar nota', de: 'Notiz löschen', fr: 'Supprimer la note', ja: 'メモを削除', ru: 'Удалить заметку' },
+       confirmDelete: { fa: 'این یادداشت و کار متصل به آن در Todo حذف شوند؟', en: 'Delete this note and its linked Todo item?', ar: 'هل تريد حذف هذه الملاحظة ومهمة Todo المرتبطة بها؟', es: '¿Eliminar esta nota y su tarea vinculada?', de: 'Diese Notiz und die verknüpfte Todo-Aufgabe löschen?', fr: 'Supprimer cette note et la tâche Todo liée ?', ja: 'このメモとリンクされたTodo項目を削除しますか？', ru: 'Удалить заметку и связанную задачу Todo?' },
+      empty: { fa: 'یادداشت کاری', en: 'Work note', ar: 'ملاحظة عمل', es: 'Nota de trabajo', de: 'Arbeitsnotiz', fr: 'Note de travail', ja: '作業メモ', ru: 'Рабочая заметка' }
+    };
+    return langPick(labels[key] || labels.empty);
+  }
+
+  function workNoteTitle(note, index) {
+    const firstLine = String(note && note.text || '').split(/\r?\n/).map(s => s.trim()).find(Boolean);
+    return (firstLine || workNoteLabel('empty') + ' ' + (index + 1)).slice(0, 18);
+  }
+
+  function currentWorkNote() {
+    return activeWorkNoteId ? workNotesData.find(note => note.id === activeWorkNoteId) || null : null;
+  }
+
+  function persistWorkNotes() {
+    try {
+      if (chrome.runtime?.id) chrome.storage.local.set({ [WORK_NOTES_STORAGE_KEY]: workNotesData });
+    } catch (e) {}
+  }
+
+  function normalizeWorkNotes(items) {
+    return (Array.isArray(items) ? items : []).filter(note => note && typeof note.text === 'string').map((note, index) => ({
+      id: String(note.id || newLinkId('wn')),
+      text: note.text,
+      color: WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length],
+      createdAt: Number(note.createdAt) || Date.now(),
+      updatedAt: Number(note.updatedAt) || Number(note.createdAt) || Date.now(),
+      todoId: note.todoId ? String(note.todoId) : null
+    }));
+  }
+
+  function syncWorkNoteDockPosition() {
+    if (!workNoteDock || workNoteDock.hidden || !quickNoteForm.classList.contains('active')) return;
+    const rect = quickNoteForm.getBoundingClientRect();
+    const dockWidth = workNoteDock.offsetWidth || 50;
+    const dockHeight = Math.min(workNoteDock.offsetHeight || 250, Math.max(120, window.innerHeight - 16));
+    const gap = 7;
+    const rightSpace = window.innerWidth - rect.right;
+    const leftSpace = rect.left;
+    const dockSide = rightSpace >= dockWidth + gap ? 'right'
+      : leftSpace >= dockWidth + gap ? 'left'
+        : rightSpace >= leftSpace ? 'right' : 'left';
+    let left = dockSide === 'right' ? rect.right + gap : rect.left - dockWidth - gap;
+    let top = rect.top + Math.min(52, Math.max(16, rect.height * 0.12));
+    left = Math.max(6, Math.min(window.innerWidth - dockWidth - 6, left));
+    top = Math.max(6, Math.min(window.innerHeight - dockHeight - 6, top));
+    const popoverWidth = 184;
+    const rightOfDock = window.innerWidth - left - dockWidth;
+    workNoteDock.dataset.side = dockSide;
+    workNoteDock.dataset.moreSide = rightOfDock >= popoverWidth + gap ? 'right' : left >= popoverWidth + gap ? 'left' : (dockSide === 'right' ? 'left' : 'right');
+    workNoteDock.style.left = `${left}px`;
+    workNoteDock.style.top = `${top}px`;
+  }
+
+  function makeWorkNoteDockButton(className, text, title, onClick) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = className; button.textContent = text;
+    button.title = title; button.setAttribute('aria-label', title);
+    button.addEventListener('click', (event) => { event.stopPropagation(); onClick(event); });
+    return button;
+  }
+
+  function removeWorkNote(noteId) {
+    const note = workNotesData.find(item => item.id === noteId);
+    if (!note || !window.confirm(workNoteLabel('confirmDelete'))) return;
+    if (activeWorkNoteId === note.id) {
+      flushCurrentNoteValue();
+      clearTimeout(workNoteTodoSyncTimer);
+      activeWorkNoteId = null;
+      noteTextarea.value = scratchDraftCache || '';
+      updateNoteTokenMeter();
+      if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
+    }
+    const previousTodoCount = todosData.length;
+    todosData = todosData.filter(todo => todo.sourceWorkNoteId !== note.id && (!note.todoId || todo.id !== note.todoId));
+    if (todosData.length !== previousTodoCount) {
+      saveTodos();
+      if (todoPanel.classList.contains('active')) renderTodos();
+    }
+    workNotesData = workNotesData.filter(item => item.id !== note.id);
+    persistWorkNotes();
+    renderWorkNotes();
+  }
+
+  function renderWorkNoteDock() {
+    if (!workNoteDock || !workNoteDockList) return;
+    workNoteDockList.innerHTML = '';
+    const sorted = workNotesData.slice().sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+    const draft = makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-draft', '✎', workNoteLabel('scratch'), () => { selectWorkNote(null); noteTextarea.focus(); });
+    if (!activeWorkNoteId) draft.classList.add('is-active');
+    workNoteDockList.appendChild(draft);
+    workNoteDockList.appendChild(makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-add', '+', workNoteLabel('add'), () => createWorkNote()));
+
+    sorted.slice(0, 5).forEach((note, index) => {
+      const wrap = document.createElement('div'); wrap.className = 'ai-work-note-dock-card-wrap';
+      const card = makeWorkNoteDockButton('ai-work-note-dock-paper' + (activeWorkNoteId === note.id ? ' is-active' : ''), workNoteTitle(note, index), langPick({ fa: 'برای بازکردن و ویرایش یادداشت کلیک کنید', en: 'Open this note to edit' }), () => { closeWorkNoteMore(); selectWorkNote(note.id); noteTextarea.focus(); });
+      card.dataset.color = WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length];
+      card.title = `${card.title}: ${String(note.text || workNoteLabel('empty'))}`;
+      card.setAttribute('aria-label', card.title);
+      const remove = makeWorkNoteDockButton('ai-work-note-dock-delete', '×', workNoteLabel('delete'), () => removeWorkNote(note.id));
+      wrap.append(card, remove); workNoteDockList.appendChild(wrap);
+    });
+
+    workNoteDockMoreList.innerHTML = '';
+    if (sorted.length > 5) {
+      sorted.slice(5).forEach((note, offset) => {
+        const row = document.createElement('div'); row.className = 'ai-work-note-dock-more-row';
+        const index = offset + 5;
+        const open = makeWorkNoteDockButton('ai-work-note-more-open', workNoteTitle(note, index), String(note.text || workNoteLabel('empty')), () => { closeWorkNoteMore(); selectWorkNote(note.id); noteTextarea.focus(); });
+        open.dataset.color = WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length];
+        const remove = makeWorkNoteDockButton('ai-work-note-more-delete', '×', workNoteLabel('delete'), () => removeWorkNote(note.id));
+        row.append(open, remove); workNoteDockMoreList.appendChild(row);
+      });
+      const more = makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-more', '⋯', `${workNoteLabel('more')} (${sorted.length - 5})`, () => {
+        workNoteDockMoreList.hidden = !workNoteDockMoreList.hidden;
+        workNoteDock.classList.toggle('has-more', !workNoteDockMoreList.hidden);
+        if (!workNoteDockMoreList.hidden) workNoteDockMoreList.scrollTop = 0;
+      });
+      workNoteDockList.appendChild(more);
+    } else {
+      workNoteDockMoreList.hidden = true;
+      workNoteDock.classList.remove('has-more');
+    }
+    const note = currentWorkNote();
+    const linked = !!(note && todosData.some(todo => todo.sourceWorkNoteId === note.id || todo.id === note.todoId));
+    const todoButton = makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-todo' + (linked ? ' is-linked' : ''), linked ? '✓' : '+✓', linked ? workNoteLabel('todoLinked') : workNoteLabel('todo'), () => addCurrentNoteToTodo());
+    workNoteDockList.appendChild(todoButton);
+
+    const show = quickNoteForm.classList.contains('active') && !quickNoteForm.classList.contains('split-docked');
+    workNoteDock.hidden = !show;
+    if (show) requestAnimationFrame(syncWorkNoteDockPosition);
+  }
+
+  function closeWorkNoteMore() {
+    workNoteDockMoreList.hidden = true;
+    workNoteDock.classList.remove('has-more');
+  }
+
+  let workNoteDockPositionFrame = 0;
+  function queueWorkNoteDockPosition() {
+    if (workNoteDockPositionFrame) return;
+    workNoteDockPositionFrame = requestAnimationFrame(() => {
+      workNoteDockPositionFrame = 0;
+      renderWorkNoteDock();
+    });
+  }
+  try {
+    const dockObserver = new MutationObserver(queueWorkNoteDockPosition);
+    dockObserver.observe(quickNoteForm, { attributes: true, attributeFilter: ['class', 'style'] });
+    if (typeof ResizeObserver === 'function') {
+      const dockResizeObserver = new ResizeObserver(queueWorkNoteDockPosition);
+      dockResizeObserver.observe(quickNoteForm);
+    }
+    quickNoteForm.addEventListener('transitionend', queueWorkNoteDockPosition);
+    window.addEventListener('resize', queueWorkNoteDockPosition, { passive: true });
+  } catch (e) {}
+
+  function syncWorkNoteTodo(note) {
+    if (!note || !note.id) return;
+    const task = todosData.find(todo => todo.sourceWorkNoteId === note.id || todo.id === note.todoId);
+    if (!task) { note.todoId = null; return; }
+    const text = String(note.text || '').trim();
+    if (!text || task.text === text) return;
+    task.text = text;
+    note.todoId = task.id;
+    saveTodos();
+    if (todoPanel.classList.contains('active')) renderTodos();
+  }
+
+  function saveWorkNoteValue(noteId, value) {
+    const note = workNotesData.find(item => item.id === noteId);
+    if (!note) return;
+    note.text = String(value || '');
+    note.updatedAt = Date.now();
+    persistWorkNotes();
+    renderWorkNotes();
+    if (note.todoId || todosData.some(todo => todo.sourceWorkNoteId === note.id)) {
+      clearTimeout(workNoteTodoSyncTimer);
+      workNoteTodoSyncTimer = setTimeout(() => syncWorkNoteTodo(note), 1200);
+    }
+  }
+
+  function flushCurrentNoteValue() {
+    clearTimeout(noteDraftSaveTimer);
+    if (!noteTextarea) return;
+    const value = noteTextarea.value;
+    if (activeWorkNoteId) saveWorkNoteValue(activeWorkNoteId, value);
+    else {
+      scratchDraftCache = value;
+      try { if (chrome.runtime?.id) chrome.storage.local.set({ savedPromptDraft: value }); } catch (e) {}
+    }
+  }
+
+  function selectWorkNote(noteId) {
+    if (noteId === activeWorkNoteId) return;
+    flushCurrentNoteValue();
+    activeWorkNoteId = noteId || null;
+    closeWorkNoteMore();
+    if (notepadUndo) { try { notepadUndo.clear(); } catch (e) {} }
+    if (activeWorkNoteId) {
+      const note = currentWorkNote();
+      if (!note) { activeWorkNoteId = null; return; }
+      noteTextarea.value = String(note.text || '');
+      renderWorkNotes();
+      updateNoteTokenMeter();
+      if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
+      return;
+    }
+    renderWorkNotes();
+    if (scratchDraftCache !== null) {
+      noteTextarea.value = scratchDraftCache;
+      updateNoteTokenMeter();
+      if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
+      return;
+    }
+    try {
+      chrome.storage.local.get(['savedPromptDraft'], (res) => {
+        if (activeWorkNoteId) return;
+        scratchDraftCache = res && typeof res.savedPromptDraft === 'string' ? res.savedPromptDraft : '';
+        noteTextarea.value = scratchDraftCache;
+        updateNoteTokenMeter();
+        if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
+      });
+    } catch (e) { noteTextarea.value = ''; }
+  }
+
+  function renderWorkNotes() {
+    renderWorkNoteDock();
+  }
+
+  function loadWorkNotes() {
+    try {
+      chrome.storage.local.get([WORK_NOTES_STORAGE_KEY], (res) => {
+        workNotesData = normalizeWorkNotes(res && res[WORK_NOTES_STORAGE_KEY]);
+        renderWorkNotes();
+      });
+    } catch (e) { renderWorkNotes(); }
+  }
+
+  async function addCurrentNoteToTodo() {
+    const text = String(noteTextarea && noteTextarea.value || '').trim();
+    if (!text) { showToastNotification(langPick({ fa: 'ابتدا متن یادداشت را بنویسید', en: 'Write a note first', ar: 'اكتب ملاحظة أولاً', es: 'Escribe una nota primero', de: 'Schreibe zuerst eine Notiz', fr: 'Écrivez d’abord une note', ja: '先にメモを入力してください', ru: 'Сначала напишите заметку' })); return; }
+    let note = currentWorkNote();
+    if (!note) {
+      flushCurrentNoteValue();
+      note = { id: newLinkId('wn'), text, color: WORK_NOTE_COLORS[workNotesData.length % WORK_NOTE_COLORS.length], createdAt: Date.now(), updatedAt: Date.now(), todoId: null };
+      workNotesData.unshift(note);
+      activeWorkNoteId = note.id;
+      persistWorkNotes(); renderWorkNotes();
+    } else {
+      note.text = text; note.updatedAt = Date.now();
+    }
+    const [localData, syncData] = await Promise.all([
+      storageGet('local', ['aiTreeTodos']),
+      storageGet('sync', ['aiTreeTodos'])
+    ]);
+    const storedTodos = Array.isArray(localData.aiTreeTodos) && localData.aiTreeTodos.length
+      ? localData.aiTreeTodos
+      : Array.isArray(syncData.aiTreeTodos) ? syncData.aiTreeTodos : todosData;
+    todosData = storedTodos;
+    const latestText = String(activeWorkNoteId === note.id && noteTextarea ? noteTextarea.value : note.text || '').trim();
+    if (latestText) note.text = latestText;
+    let task = todosData.find(todo => todo.sourceWorkNoteId === note.id || todo.id === note.todoId);
+    if (task) task.text = latestText || text;
+    else {
+      task = { id: newLinkId('td'), text: latestText || text, done: false, type: 'daily', createdAt: Date.now(), sourceWorkNoteId: note.id };
+      todosData.push(task);
+    }
+    note.todoId = task.id;
+    persistWorkNotes(); saveTodos();
+    if (todoPanel.classList.contains('active')) renderTodos();
+    renderWorkNotes();
+    showToastNotification(langPick({ fa: 'یادداشت به کارهای روزانه وصل شد', en: 'Note added to daily Todo', ar: 'أضيفت الملاحظة إلى المهام اليومية', es: 'Nota añadida a tareas diarias', de: 'Notiz zu täglichen Aufgaben hinzugefügt', fr: 'Note ajoutée aux tâches du jour', ja: 'メモを今日のTodoに追加しました', ru: 'Заметка добавлена в задачи на сегодня' }));
+  }
+
+  function createWorkNote() {
+    flushCurrentNoteValue();
+    const note = { id: newLinkId('wn'), text: '', color: WORK_NOTE_COLORS[workNotesData.length % WORK_NOTE_COLORS.length], createdAt: Date.now(), updatedAt: Date.now(), todoId: null };
+    workNotesData.unshift(note); activeWorkNoteId = note.id;
+    persistWorkNotes(); renderWorkNotes();
+    noteTextarea.value = ''; updateNoteTokenMeter();
+    if (notepadUndo) { try { notepadUndo.clear(); } catch (e) {} }
+    if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
+    noteTextarea.focus();
+  }
+
   function saveNoteDraftDebounced() {
     clearTimeout(noteDraftSaveTimer);
+    const noteId = activeWorkNoteId;
+    const value = noteTextarea ? noteTextarea.value : '';
     noteDraftSaveTimer = setTimeout(() => {
-      try {
-        if (chrome.runtime?.id && noteTextarea) {
-          chrome.storage.local.set({ savedPromptDraft: noteTextarea.value });
-        }
-      } catch (e) {}
+      if (noteId) saveWorkNoteValue(noteId, value);
+      else {
+        scratchDraftCache = value;
+        try { if (chrome.runtime?.id) chrome.storage.local.set({ savedPromptDraft: value }); } catch (e) {}
+      }
     }, 400);
   }
 
   function restoreNoteDraft() {
     try {
       chrome.storage.local.get(['savedPromptDraft', 'aiTreePromptHistory', CUSTOM_PROMPT_KEY, PROMPT_OVERRIDE_KEY, PROMPT_HIDDEN_KEY], (res) => {
-        if (res && typeof res.savedPromptDraft === 'string' && noteTextarea && !noteTextarea.value) {
-          noteTextarea.value = res.savedPromptDraft;
+        if (res && typeof res.savedPromptDraft === 'string') {
+          scratchDraftCache = res.savedPromptDraft;
+          if (!activeWorkNoteId && noteTextarea && !noteTextarea.value) noteTextarea.value = res.savedPromptDraft;
         }
         if (res && Array.isArray(res.aiTreePromptHistory)) {
           promptHistory = res.aiTreePromptHistory.slice(0, 10);
@@ -8700,6 +9071,7 @@ let hubAutoCollapsedByPanel = false;
   }
 
   restoreNoteDraft();
+  loadWorkNotes();
   renderNoteTemplates();
   updateNoteTokenMeter();
 
@@ -8894,11 +9266,14 @@ let hubAutoCollapsedByPanel = false;
       pendingUndoState = { type: null, data: null, hub: 1 };
     }
     try {
-      if (chrome.runtime?.id) {
-        chrome.storage.local.remove(['aiTreeNotepadHistory']);
-        chrome.storage.local.set({ savedPromptDraft: '' });
-      }
+      if (chrome.runtime?.id) chrome.storage.local.remove(['aiTreeNotepadHistory']);
     } catch (e) {}
+    if (activeWorkNoteId) {
+      saveWorkNoteValue(activeWorkNoteId, '');
+    } else {
+      scratchDraftCache = '';
+      try { if (chrome.runtime?.id) chrome.storage.local.set({ savedPromptDraft: '' }); } catch (e) {}
+    }
     if (noteTextarea) {
       noteTextarea.value = '';
     }
@@ -10792,6 +11167,7 @@ let hubAutoCollapsedByPanel = false;
           }
           if (langChanged) {
             updateUITexts();
+            if (typeof renderWorkNotes === 'function') renderWorkNotes();
             // «هوشمند»: اگر حالت کشور روی auto است، با تغییر زبان برنامه کشورِ حدسی هم عوض می‌شود
             if (showPublicHolidays && holidayRegionMode === 'auto') loadRegionalHolidays();
           }
@@ -10825,13 +11201,24 @@ let hubAutoCollapsedByPanel = false;
         }
         // Two-way live sync with the standalone notepad tab (see notepad.js).
         // Only overwrite when this widget's textarea isn't the one being typed in.
-        if (changes.savedPromptDraft && noteTextarea && document.activeElement !== noteTextarea) {
+        if (changes.savedPromptDraft) {
           const newVal = changes.savedPromptDraft.newValue || '';
-          if (newVal !== noteTextarea.value) {
+          scratchDraftCache = newVal;
+          if (!activeWorkNoteId && noteTextarea && document.activeElement !== noteTextarea && newVal !== noteTextarea.value) {
             noteTextarea.value = newVal;
             if (typeof updateNoteTokenMeter === 'function') updateNoteTokenMeter();
             if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
           }
+        }
+        if (changes[WORK_NOTES_STORAGE_KEY]) {
+          workNotesData = normalizeWorkNotes(changes[WORK_NOTES_STORAGE_KEY].newValue);
+          const activeNote = currentWorkNote();
+          if (activeNote && noteTextarea && document.activeElement !== noteTextarea && activeNote.text !== noteTextarea.value) {
+            noteTextarea.value = activeNote.text;
+            if (typeof updateNoteTokenMeter === 'function') updateNoteTokenMeter();
+            if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
+          }
+          if (typeof renderWorkNotes === 'function') renderWorkNotes();
         }
         if (changes.noteTextAlign && changes.noteTextAlign.newValue && typeof setNoteAlign === 'function') {
           setNoteAlign(changes.noteTextAlign.newValue);

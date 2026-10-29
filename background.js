@@ -407,6 +407,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     if (message.grantMic) qp.set('grantMic', '1');
     if (message.autoVoice) qp.set('autoVoice', '1');
+    if (typeof message.workNoteId === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(message.workNoteId)) qp.set('workNote', message.workNoteId);
     const qs = qp.toString();
     if (qs) url += '?' + qs;
     chrome.tabs.create({ url })
