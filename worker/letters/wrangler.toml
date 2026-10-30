@@ -1,0 +1,8 @@
+name = "void-galaxy-letters"
+main = "worker.js"
+compatibility_date = "2024-04-05"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "void-galaxy-letters-db"
+database_id = "559070d9-afb4-471e-8839-78866e9437a1"

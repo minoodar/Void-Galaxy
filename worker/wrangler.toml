@@ -1,0 +1,17 @@
+name = "void-galaxy-counter"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "void-galaxy-counter"
+database_id = "61cca971-1426-4e5e-91f4-019d6ac4fc38"
+
+[vars]
+# Set to "1" only while testing the GitHub Pages site against `wrangler dev`
+# from a localhost origin. Keep "0" in production.
+ALLOW_LOCAL = "0"
+
+# Secrets are set separately, never in this file:
+#   wrangler secret put SALT
+#   wrangler secret put ADMIN_TOKEN
