@@ -1,0 +1,16 @@
+/* Visitor counter */
+#void-counter{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));z-index:900;display:flex;flex-direction:column-reverse;opacity:0;transition:opacity .45s cubic-bezier(.22,1,.36,1);font:12.5px/1.35 system-ui,sans-serif}
+#void-counter.is-on{opacity:1}
+#void-counter[hidden]{display:none}
+#void-counter .vc-b{width:32px;height:32px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}
+#void-counter .vc-b:focus-visible{outline:2px solid #dce6f0e6;outline-offset:2px}
+#void-counter .vc-d{width:9px;height:9px;border-radius:50%;background:#fbbf24b8;box-shadow:0 0 8px #fbbf2480,0 0 18px #fbbf2433;animation:vc-pulse 6s ease-in-out infinite}
+#void-counter.is-paused .vc-d{animation-play-state:paused}
+#void-counter .vc-p{position:absolute;left:0;bottom:100%;max-width:216px;padding:9px 12px 10px;border:1px solid #ebf0f547;border-radius:12px;background:#080a0eb8;backdrop-filter:blur(10px);box-shadow:0 10px 30px #00000059;white-space:nowrap;visibility:hidden;opacity:0;transform:translateY(4px) scale(.98);transition:opacity .22s,transform .28s cubic-bezier(.22,1,.36,1),visibility 0s .28s}
+#void-counter.is-open .vc-p{visibility:visible;opacity:1;transform:none;transition-delay:0s}
+#void-counter .vc-l,#void-counter .vc-s{display:block;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+#void-counter .vc-l{color:#fafcfff5;font-weight:600}
+#void-counter .vc-s{margin-top:2px;color:#ebf0f5b8;font-size:10.5px}
+@keyframes vc-pulse{0%,100%{opacity:.55;transform:scale(.86)}50%{opacity:1;transform:scale(1)}}
+@media(max-width:1039px){#void-counter{top:max(8px,env(safe-area-inset-top));bottom:auto;left:max(8px,env(safe-area-inset-left));flex-direction:column}#void-counter .vc-b{width:44px;height:44px}#void-counter .vc-p{top:100%;bottom:auto}}
+@media(prefers-reduced-motion:reduce){#void-counter{transition:none}#void-counter .vc-d{animation:none}#void-counter .vc-p{transform:none;transition:none}}

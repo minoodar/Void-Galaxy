@@ -114,6 +114,8 @@
   const SHUFFLE_DEFAULT = false, SHUF_KEY = 'voidMusic.shuffle';
   try { const sv = localStorage.getItem(SHUF_KEY); S.shuffle = sv === null ? SHUFFLE_DEFAULT : sv === '1'; } catch (e) { S.shuffle = SHUFFLE_DEFAULT; }
   let root, dock, els = {};
+  /* Cosmic fallback for the current track: used when an artwork URL fails to load. */
+  let coverFallback = null;
 
   /* ------------------------------------------------------------------ */
   /* ابزارها                                                              */
@@ -134,6 +136,13 @@
   }
   function nameToTitle(name) {
     return String(name || '').replace(/\.[^.]+$/, '').replace(/^\s*\d{1,3}\s*[-._)]\s*/, '').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim() || name;
+  }
+  // نامِ نمایشیِ یک منبعِ دور: فقط آخرین بخشِ مسیر؛ URLِ اصلی دست‌نخورده می‌ماند
+  function urlToName(url) {
+    try {
+      const seg = new URL(url, location.href).pathname.split('/').pop() || '';
+      return decodeURIComponent(seg) || url;
+    } catch (e) { return String(url || ''); }
   }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   // نرمال‌سازیِ جستجو: حروف کوچک، بدون اعراب/کشیده/نیم‌فاصله، «ي ك» عربی ← «ی ک» فارسی، ارقامِ فارسی/عربی ← لاتین
@@ -529,18 +538,20 @@
     function indexTrack(tr) { const a = byName.get(tr.name); if (a) a.push(tr); else byName.set(tr.name, [tr]); }
     for (const tr of S.tracks) indexTrack(tr);
     for (const en of entries) {
+      const url = typeof en.url === 'string' && en.url ? en.url : null;
       let f = en.file || null, h = en.handle || null;
-      const name = (h && h.name) || (f && f.name) || '';
-      if (!isAudioName(name, f)) continue;
+      const name = en.name || (h && h.name) || (f && f.name) || (url ? urlToName(url) : '');
+      if (!url && !isAudioName(name, f)) continue;
       let dup = false;
       const cands = byName.get(name);
       if (cands) for (const tr of cands) {
+        if (url && tr.url === url) { dup = true; dupTr = tr; break; }
         if (en.root && tr.rootId === en.root.id && tr.path && tr.path.join('/') === en.path.join('/')) { dup = true; dupTr = tr; break; }
         if (!en.root && h && tr.handle && !tr.copy) { try { if (await tr.handle.isSameEntry(h)) { dup = true; dupTr = tr; break; } } catch (e) {} }
         else if (f && tr.file && tr.file.name === f.name && tr.file.size === f.size && tr.file.lastModified === f.lastModified) { dup = true; dupTr = tr; break; }
       }
       if (dup) { if (!firstTarget) firstTarget = dupTr; continue; }
-      const tr = { stars: 0, ts: Date.now() + added, id: uid(), name: name, title: nameToTitle(name), artist: '', file: f, handle: h, bad: false, rootId: en.root ? en.root.id : null, path: en.root ? en.path : null, copy: null };
+      const tr = { stars: en.golden ? 5 : 0, golden: !!en.golden, ts: Date.now() + added, id: uid(), name: name, title: en.title || nameToTitle(name), artist: en.artist || '', artwork: typeof en.artwork === 'string' && en.artwork ? en.artwork : null, file: f, handle: h, url: url, bad: false, rootId: en.root ? en.root.id : null, path: en.root ? en.path : null, copy: null };
       if (S.copyMode) {
         // «نسخهٔ خصوصی»: فایل یک بار در OPFS کپی می‌شود؛ از آن به بعد هیچ مجوزی لازم نیست
         try {
@@ -565,7 +576,8 @@
     // فایلِ تکی (یا انتخابِ صریحِ فایل از دکمهٔ «افزودن فایل»): همان فایل بلافاصله پخش شود، حتی اگر آهنگ دیگری جاری باشد.
     // اگر فایلِ انتخابی از قبل در فهرست بود، همان ردیفِ موجود پخش می‌شود.
     if (firstTarget && (entries.length === 1 || opts.playFirst)) {
-      if (!(firstTarget.id === S.curId && S.audio && !S.audio.paused)) { playbackLog('play-now-after-pick', { added: added, picked: entries.length }); firstTarget.bad = false; playId(firstTarget.id); }
+      const samePlaying = firstTarget.id === S.curId && S.audio && !S.audio.paused;
+      if (opts.force || !samePlaying) { playbackLog('play-now-after-pick', { added: added, picked: entries.length, force: !!opts.force }); firstTarget.bad = false; playId(firstTarget.id); }
     } else if (added && (!S.audio || S.audio.paused) && S.curId === null) {
       // افزودنِ گروهی (پوشه/چندفایلِ رها‌شده): فقط وقتی هیچ آهنگی جاری نیست خودکار شروع شود
       playbackLog('auto-start-after-add', { added: added, readyState: S.audio ? S.audio.readyState : 0 });
@@ -615,7 +627,7 @@
     a.addEventListener('seeked', posState);
     a.addEventListener('ended', function () { next(); });
     a.addEventListener('error', onAudioError);
-    ['playing', 'waiting', 'pause', 'ended', 'error', 'loadstart', 'canplay'].forEach(function (eventName) {
+    ['playing', 'waiting', 'stalled', 'pause', 'ended', 'error', 'loadstart', 'canplay'].forEach(function (eventName) {
       a.addEventListener(eventName, function () {
         const err = a.error;
         playbackLog('audio-event-' + eventName, {
@@ -624,6 +636,13 @@
           duration: isFinite(a.duration) ? a.duration : null,
           mediaError: err ? { code: err.code, message: err.message || '' } : null
         });
+        // فقط منبعِ دور گزارش می‌دهد؛ مسیرِ فایلِ محلی و وب دست‌نخورده می‌ماند
+        if (eventName === 'loadstart') emitRemote('loading');
+        else if (eventName === 'waiting') emitRemote('buffering');
+        else if (eventName === 'stalled') emitRemote('stalled');
+        else if (eventName === 'playing') { emitRemote('playing'); revealRemoteTitle(); }
+        else if (eventName === 'pause') emitRemote('paused', { readyState: a.readyState });
+        else if (eventName === 'ended') emitRemote('ended');
       });
     });
     S.audio = S.localAudio = a;
@@ -688,56 +707,116 @@
     return S.bag.pop();
   }
 
+  /* ---- artwork for remote streams ---- */
+  function resolveMediaUrl(value) {
+    if (typeof value !== 'string' || !value) return null;
+    try {
+      const u = new URL(value, location.href);
+      return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : null;
+    } catch (e) { return null; }
+  }
+  function cosmicCover(title, key) {
+    try {
+      return window.VoidArtwork && typeof window.VoidArtwork.cosmic === 'function'
+        ? window.VoidArtwork.cosmic(title, key)
+        : null;
+    } catch (e) { return null; }
+  }
+  function applyCover(tok, tr, url) {
+    if (tok !== S.token || S.curId !== tr.id || !url) return;
+    setMeta(tr.title, tr.artist, url);
+    publishSession(tr, url);
+    pushRemote(true);
+  }
+  /* Custom URL > embedded ID3 (CORS permitting) > deterministic cosmic cover.
+     The cosmic cover is painted first so a slow header read never leaves the
+     meta line empty. */
+  function resolveRemoteCover(tr, tok) {
+    const fallback = cosmicCover(tr.title, tr.url || '');
+    coverFallback = fallback;
+    const explicit = resolveMediaUrl(tr.artwork);
+    if (explicit) { applyCover(tok, tr, explicit); return; }
+    if (fallback) setMeta(tr.title, tr.artist, fallback);
+    const art = window.VoidArtwork;
+    if (!art || typeof art.extractId3 !== 'function') return;
+    art.extractId3(tr.url).then(function (found) {
+      if (tok !== S.token || S.curId !== tr.id) return;
+      if (found && found.url) applyCover(tok, tr, found.url);
+    }, function () {});
+  }
+
   async function playId(id, opts) {
     opts = opts || {};
     if (S.web) detachWeb({ pauseSite: true });          // پخشِ محلی شروع شد: منبعِ وب جدا و مکث می‌شود
     const tr = trackById(id);
     if (!tr) { playbackLog('play-aborted-no-track', { trackId: id }); return; }
-    playbackLog('play-requested', { sourceType: tr.file ? 'File' : (tr.copy ? 'private-copy' : 'file-handle'), hasHandle: !!tr.handle, hasCopy: !!tr.copy, token: S.token + 1 });
+    const remote = !!tr.url;
+    playbackLog('play-requested', { sourceType: remote ? 'remote-url' : (tr.file ? 'File' : (tr.copy ? 'private-copy' : 'file-handle')), hasHandle: !!tr.handle, hasCopy: !!tr.copy, token: S.token + 1, remote: remote });
     const tok = ++S.token;
-    let file;
-    try { file = await fileOf(tr); }
-    catch (e) {
-      const cause = (e && e.message) || 'unreadable';
-      playbackLog('source-load-failed', { cause: cause, name: e && e.name || 'Error', message: e && e.message || String(e), hasHandle: !!tr.handle, hasCopy: !!tr.copy, rootId: tr.rootId || null });
-      if (tok === S.token) { trackFailed(tr, cause); releasePlayback(); }
-      return;
+    let file = null;
+    if (!remote) {
+      try { file = await fileOf(tr); }
+      catch (e) {
+        const cause = (e && e.message) || 'unreadable';
+        playbackLog('source-load-failed', { cause: cause, name: e && e.name || 'Error', message: e && e.message || String(e), hasHandle: !!tr.handle, hasCopy: !!tr.copy, rootId: tr.rootId || null });
+        if (tok === S.token) { trackFailed(tr, cause); releasePlayback(); }
+        return;
+      }
     }
     if (tok !== S.token) { playbackLog('play-aborted-stale-token', { token: tok, currentToken: S.token }); return; }
-    playbackLog('source-loaded', { type: file && file.type || '', size: file && file.size, readyState: S.audio ? S.audio.readyState : 0 });
+    if (!remote) playbackLog('source-loaded', { type: file && file.type || '', size: file && file.size, readyState: S.audio ? S.audio.readyState : 0 });
     if (!await claimPlayback()) { playbackLog('play-aborted-claim-denied', { token: tok }); return; }
     if (tok !== S.token) { playbackLog('play-aborted-stale-after-claim', { token: tok, currentToken: S.token }); if (!isPlaying()) releasePlayback(); return; }
     const a = ensureAudio();
+    const prevTr = trackById(S.curId);
     if (S.curId && S.curId !== id && !opts.fromHistory) { S.history.push(S.curId); if (S.history.length > 60) S.history.shift(); }
     S.bag = S.bag.filter(function (x) { return x !== id; });
     S.curId = id;
     S.seed = rand32();
     poke();
-    if (S.url) { try { URL.revokeObjectURL(S.url); } catch (e) {} }
-    S.url = URL.createObjectURL(file);
-    a.src = S.url;
-    playbackLog('audio-source-set', { readyState: a.readyState, paused: a.paused, muted: a.muted, volume: a.volume, hasSource: !!a.currentSrc, fileType: file.type || '', fileSize: file.size });
+    if (S.url) { try { URL.revokeObjectURL(S.url); } catch (e) {} S.url = null; }
+    if (remote) {
+      /* CORS باید *پیش از* src ست شود؛ وگرنه منبعِ دور بی‌CORS بارگذاری می‌شود و
+         MediaElementAudioSourceNode در ویژولایزر سکوت تحویل می‌دهد. */
+      a.crossOrigin = 'anonymous';
+      if (a.getAttribute('src') === tr.url) { try { a.removeAttribute('src'); a.load(); } catch (e) {} }   // تلاشِ دوباره باید همان URL را از نو بارگذاری کند
+      a.src = tr.url;
+      if (S.coverUrl) { try { URL.revokeObjectURL(S.coverUrl); } catch (e) {} S.coverUrl = null; }
+    } else {
+      a.removeAttribute('crossorigin');
+      S.url = URL.createObjectURL(file);
+      a.src = S.url;
+    }
+    /* منبعِ فعال عوض شد: وضعیتِ «در حال اتصال» منبعِ دورِ قبلی نباید روی منبعِ تازه بماند */
+    if (prevTr && prevTr.url && prevTr.id !== id) emitRemoteFor(prevTr, 'inactive');
+    playbackLog('audio-source-set', { readyState: a.readyState, paused: a.paused, muted: a.muted, volume: a.volume, hasSource: !!a.currentSrc, fileType: remote ? 'remote-url' : (file.type || ''), fileSize: remote ? null : file.size, remote: remote });
     setMeta(tr.title, tr.artist, null);
+    coverFallback = null;
     renderQueue();
     publishSession(tr, null);
+    if (remote) resolveRemoteCover(tr, tok);
     pushRemote(true);
     try { window.dispatchEvent(new CustomEvent('voidmusic:track', { detail: { id: id, title: tr.title, seed: S.seed } })); } catch (e) {}
     let playbackStarted = false;
     try { playbackLog('audio-play-invoked', { readyState: a.readyState, paused: a.paused, muted: a.muted, volume: a.volume, hasSource: !!a.currentSrc }); await a.play(); playbackStarted = true; playbackLog('audio-play-resolved', { readyState: a.readyState, paused: a.paused, ended: a.ended, muted: a.muted, volume: a.volume }); S.failures = 0; S.failStreak = 0; S.grantAdvised = false; S.grantTrack = null; tr.needGrant = null; }
     catch (e) {
       playbackLog('audio-play-rejected', { name: e && e.name || 'Error', message: e && e.message || String(e), readyState: a.readyState, paused: a.paused, ended: a.ended, muted: a.muted, volume: a.volume, mediaError: a.error ? { code: a.error.code, message: a.error.message || '' } : null });
+      if (remote && tok === S.token) emitRemote(e && e.name === 'NotAllowedError' ? 'blocked' : 'error', { code: e && e.name || 'play-rejected', message: e && e.message || String(e) });
       if (a.paused) releasePlayback();
     }
     if (tok !== S.token) return;
+    if (remote) return;                     // متادیتای دور خوانده نمی‌شود: عنوانِ معلوم است و پودر از رویدادِ native playing می‌آید
     readMeta(file).then(function (m) {
       if (tok !== S.token || !m) return;
       if (m.title) tr.title = m.title;
       if (m.artist) tr.artist = m.artist;
       let cu = null;
       if (m.cover) { cu = URL.createObjectURL(m.cover); }
+      const cosmic = cosmicCover(tr.title, tr.name || '');
+      coverFallback = cosmic;
       if (S.coverUrl) { try { URL.revokeObjectURL(S.coverUrl); } catch (e) {} }
       S.coverUrl = cu;
-      setMeta(tr.title, tr.artist, cu, function () {
+      setMeta(tr.title, tr.artist, cu || cosmic, function () {
         if (!playbackStarted || tok !== S.token || S.curId !== id || a.paused) return;
         try { window.dispatchEvent(new CustomEvent('voidmusic:title-ready', { detail: { id: id, title: tr.title, artist: tr.artist, seed: S.seed, generation: tok } })); } catch (e) {}
       });
@@ -745,6 +824,33 @@
       pushRemote(true);
       renderQueue();
     });
+  }
+
+  /* وضعیتِ منبعِ دور برای لایهٔ رابط (Golden Folder). همان رویدادهای native منبع را
+     بازتاب می‌دهد؛ هیچ بافر/زمان‌بندیِ اختصاصی اینجا ساخته نمی‌شود. */
+  function emitRemoteFor(tr, state, extra) {
+    if (!tr || !tr.url) return;
+    const detail = { state: state, id: tr.id, url: tr.url, title: tr.title, artist: tr.artist, token: S.token };
+    if (extra) for (const k in extra) detail[k] = extra[k];
+    try { window.dispatchEvent(new CustomEvent('voidmusic:remote-state', { detail: detail })); } catch (e) {}
+  }
+  function emitRemote(state, extra) { emitRemoteFor(trackById(S.curId), state, extra); }
+  /* پودرِ عنوان فقط بعد از نشستنِ متن در DOM و شروعِ واقعیِ پخش؛ همان رویدادِ
+     voidmusic:title-ready که مسیرِ فایلِ محلی هم استفاده می‌کند. */
+  function revealRemoteTitle() {
+    const tr = trackById(S.curId);
+    if (!tr || !tr.url || !S.built || !S.audio || S.audio.paused) return;
+    const tok = S.token;
+    if (tr.revealedTok === tok) return;
+    let tries = 0;
+    (function waitApplied() {
+      if (tok !== S.token || S.curId !== tr.id || !tr.url || !S.audio || S.audio.paused) return;
+      if (tr.revealedTok === tok) return;
+      const applied = els.title && els.title.textContent === (tr.title || '') && !els.meta.classList.contains('is-out');
+      if (!applied && tries++ < 40) { setTimeout(waitApplied, 50); return; }
+      tr.revealedTok = tok;
+      try { window.dispatchEvent(new CustomEvent('voidmusic:title-ready', { detail: { id: tr.id, title: tr.title, artist: tr.artist, seed: S.seed, generation: tok } })); } catch (e) {}
+    })();
   }
 
   /* یک خرابی = یک پیام، نه پیام‌هایِ پشت‌سرهم. «اجازه نداری» فایل را خراب نمی‌کند:
@@ -791,6 +897,11 @@
     playbackLog('audio-error-handler', { readyState: S.audio ? S.audio.readyState : 0, paused: S.audio ? S.audio.paused : true, mediaError: S.audio && S.audio.error ? { code: S.audio.error.code, message: S.audio.error.message || '' } : null });
     releasePlayback();
     const tr = trackById(S.curId);
+    if (tr && tr.url) {
+      const err = S.audio && S.audio.error;
+      emitRemote('error', { code: err ? err.code : 0, message: err && err.message || '' });
+      return;                                                   // منبعِ دور «خراب» علامت نمی‌خورد: دکمهٔ تلاش دوباره دارد
+    }
     if (tr && S.audio && S.audio.src) trackFailed(tr, 'voidMusicUnsupported');
   }
 
@@ -821,7 +932,7 @@
       claimPlayback().then(function (granted) {
         if (!granted) return;
         playbackLog('audio-play-invoked', { readyState: a.readyState, paused: a.paused, muted: a.muted, volume: a.volume, hasSource: !!a.currentSrc });
-        const pr = a.play(); if (pr && pr.then) pr.then(function () { playbackLog('audio-play-resolved', { readyState: a.readyState, paused: a.paused, ended: a.ended, muted: a.muted, volume: a.volume }); }, function (e) { playbackLog('audio-play-rejected', { name: e && e.name || 'Error', message: e && e.message || String(e), readyState: a.readyState, paused: a.paused, muted: a.muted, volume: a.volume, mediaError: a.error ? { code: a.error.code, message: a.error.message || '' } : null }); if (a.paused) releasePlayback(); });
+        const pr = a.play(); if (pr && pr.then) pr.then(function () { playbackLog('audio-play-resolved', { readyState: a.readyState, paused: a.paused, ended: a.ended, muted: a.muted, volume: a.volume }); }, function (e) { playbackLog('audio-play-rejected', { name: e && e.name || 'Error', message: e && e.message || String(e), readyState: a.readyState, paused: a.paused, muted: a.muted, volume: a.volume, mediaError: a.error ? { code: a.error.code, message: a.error.message || '' } : null }); if (a.paused) { const tr = trackById(S.curId); if (tr && tr.url) emitRemote(e && e.name === 'NotAllowedError' ? 'blocked' : 'error', { code: e && e.name || 'play-rejected', message: e && e.message || String(e) }); releasePlayback(); } });
       });
     } else a.pause();
   }
@@ -865,7 +976,10 @@
   function publishSession(tr, coverUrl) {
     if (!('mediaSession' in navigator)) return;
     try {
-      const art = coverUrl ? [{ src: coverUrl, sizes: '300x300' }] : [];
+      /* Media Session fetches artwork itself; data: covers (the cosmic SVG) are
+         skipped instead of flooding the OS metadata with an inline document. */
+      const safe = typeof coverUrl === 'string' && /^(https?:|blob:)/.test(coverUrl) ? coverUrl : null;
+      const art = safe ? [{ src: safe, sizes: '300x300' }] : [];
       navigator.mediaSession.metadata = new MediaMetadata({ title: tr.title || '', artist: tr.artist || '', album: 'Void Galaxy', artwork: art });
     } catch (e) {}
   }
@@ -914,6 +1028,10 @@
     // عنوان + جلد
     els.meta = el('div', 'vm-meta is-blank');
     els.cover = el('img', 'vm-cover', { alt: '', hidden: '', draggable: 'false' });
+    els.cover.addEventListener('error', function () {
+      if (!coverFallback || els.cover.src === coverFallback) return;
+      els.cover.src = coverFallback;
+    });
     const tx = el('div', 'vm-text');
     els.title = el('div', 'vm-title', { dir: 'auto', 'aria-live': 'polite' });
     els.artist = el('div', 'vm-artist', { dir: 'auto' });
@@ -993,13 +1111,12 @@
 
     els.toast = el('div', 'vm-toast', { role: 'status' });
     els.corner = el('div', 'vm-corner');
-    els.close = mkBtn('vm-cbtn vm-close', 'voidMusicClose', icon(ICON.close));
     els.fs = mkBtn('vm-cbtn vm-fs', 'voidMusicFullscreen');
     els.fs.append(icon(ICON.fs, 'i-fs'), icon(ICON.fsExit, 'i-fsx'));
     els.fs.setAttribute('aria-pressed', 'false');
     els.widget = mkBtn('vm-cbtn vm-widget-btn', 'voidMusicShowWidget', icon(ICON.orbit));
     els.widget.setAttribute('aria-pressed', 'false');
-    els.corner.append(els.close, els.fs, els.widget);
+    els.corner.append(els.fs, els.widget);
     els.file = el('input', 'vm-sr', { type: 'file', accept: 'audio/*,.flac,.m4a,.opus', multiple: '', tabindex: '-1', 'aria-hidden': 'true' });
     els.folder = el('input', 'vm-sr', { type: 'file', webkitdirectory: '', multiple: '', tabindex: '-1', 'aria-hidden': 'true' });
 
@@ -1037,6 +1154,10 @@
       '.vm-rate-s{all:unset;cursor:pointer;font-size:13px;line-height:1;padding:3px 1px;color:rgba(255,255,255,.26);transition:color .12s,transform .12s}' +
       '.vm-rate-s.is-on{color:#ffd68c}.vm-rate-s:hover{color:#ffe7b0;transform:scale(1.2)}' +
       '.vm-rate-s:focus-visible{outline:1px solid rgba(199,210,254,.7);border-radius:3px}' +
+      '.vm-row.is-golden:not(.is-bad):not(.is-grant) .vm-row-main .t{color:#B76E79}' +
+      '.vm-row.is-golden .vm-rate-s.is-on{color:#D4AF37}.vm-row.is-golden .vm-rate-s.is-on:hover{color:#E8C45A}' +
+      '.vm-meta.is-golden .vm-title{color:#B76E79}' +
+      '.vm-stars.is-golden .vm-star{color:#D4AF37;text-shadow:0 0 10px rgba(212,175,55,.55),0 0 2px rgba(255,255,255,.6)}' +
       '.vm-stars{position:fixed;z-index:3;display:flex;gap:7px;transform:translateX(-50%);pointer-events:none;direction:ltr}' +
       '.vm-stars[hidden]{display:none!important}' +
       '.vm-star{font-size:19px;line-height:1;color:#ffd68c;text-shadow:0 0 10px rgba(255,200,120,.65),0 0 2px rgba(255,255,255,.7);transition:opacity .35s,transform .35s}' +
@@ -1070,7 +1191,7 @@
   function relabel() {
     refreshMenuLabel();                       // دکمهٔ نوارِ بالا و منو حتی پیش از ساخته‌شدنِ پلیر
     if (!S.built) return;
-    [els.vol, els.prev, els.next, els.queueBtn, els.open, els.close].forEach(function (b) {
+    [els.vol, els.prev, els.next, els.queueBtn, els.open].forEach(function (b) {
       const s = L(b.dataset.k); b.setAttribute('aria-label', s); b.title = s;
     });
     const pk = els.play.getAttribute('aria-pressed') === 'true' ? 'voidMusicPause' : 'voidMusicPlay';
@@ -1180,6 +1301,8 @@
     const apply = function () {
       els.title.textContent = title || '';
       els.artist.textContent = artist || '';
+      const cur = curTrack();
+      els.meta.classList.toggle('is-golden', !!(cur && cur.golden));
       renderStars();
       if (coverUrl) { els.cover.src = coverUrl; els.cover.hidden = false; }
       else { els.cover.removeAttribute('src'); els.cover.hidden = true; }
@@ -1476,6 +1599,7 @@
     if (S.starsFor !== S.curId) { S.starsFor = S.curId; S.flownId = null; }
     const tr = curTrack(), n = tr ? (tr.stars || 0) : 0;
     els.stars.textContent = '';
+    els.stars.classList.toggle('is-golden', !!(tr && tr.golden));
     const flown = S.flownId === S.curId;
     for (let i = 0; i < n; i++) { const sp = el('span', 'vm-star' + (flown ? ' is-gone' : '')); sp.textContent = '\u2605'; els.stars.appendChild(sp); }
     els.stars.hidden = !n;
@@ -1505,6 +1629,8 @@
     if (S.web === proxy) { setWebMeta(info); return; }
     if (S.web) detachWeb({ pauseSite: false, quiet: true });
     if (S.localAudio && !S.localAudio.paused) { try { S.localAudio.pause(); } catch (e) {} }
+    const prevTr = trackById(S.curId);
+    if (prevTr && prevTr.url) emitRemoteFor(prevTr, 'inactive');   // منبعِ وب جایِ آهنگِ دور را می‌گیرد
     S.curIdBeforeWeb = S.curId; S.curId = null; S.web = proxy; S.audio = proxy;
     const h = webHandlers(); Object.keys(h).forEach(function (k) { proxy.addEventListener(k, h[k]); });
     S.webKey = ''; setWebMeta(info);
@@ -1584,7 +1710,7 @@
       /* دو حالتِ متمایز: «فایل واقعاً نیست» (is-bad، خط‌خورده) و «هست ولی پوشه اجازه می‌خواهد»
          (is-grant، نقطهٔ رُز + راهنما). بی‌این تفکیک، کاربرِ گرفتارِ «دسترسی باطل» ردیفِ سالم
          را خراب می‌پنداشت و روی همان کلیک نمی‌کرد. */
-      const li = el('li', 'vm-row' + (tr.id === S.curId ? ' is-cur' : '') + (tr.bad ? ' is-bad' : '') + (tr.needGrant && !tr.bad ? ' is-grant' : ''));
+      const li = el('li', 'vm-row' + (tr.id === S.curId ? ' is-cur' : '') + (tr.golden ? ' is-golden' : '') + (tr.bad ? ' is-bad' : '') + (tr.needGrant && !tr.bad ? ' is-grant' : ''));
       const main = el('button', 'vm-row-main', { type: 'button' });
       main.appendChild(el('span', 'dot'));
       const tt = el('span', 't'); tt.textContent = tr.title + (tr.artist ? ' \u2014 ' + tr.artist : ''); tt.setAttribute('dir', 'auto');
@@ -1622,6 +1748,7 @@
     if (gone && gone.rootId && !S.tracks.some(function (t) { return t.rootId === gone.rootId; })) { S.roots.delete(gone.rootId); dbRoot('del', gone.rootId); }
     if (wasCur) {
       S.token++;
+      if (gone && gone.url) emitRemoteFor(gone, 'inactive');
       if (S.audio) { S.audio.pause(); S.audio.removeAttribute('src'); S.audio.load(); }
       S.curId = null; setMeta('', '', null); document.title = S.savedTitle || document.title;
       if (S.tracks.length) next();
@@ -1701,6 +1828,8 @@
   }
   async function claimPlayback() {
     if (SINGLE_TAB_DIAGNOSTIC) { playbackLog('diagnostic-claim-bypassed'); return true; }
+    // Web build: no extension message bus, so there is no other tab to claim against.
+    if (!hasExt()) { playbackLog('web-mode-claim-bypassed'); return true; }
     const requestId = 'vmc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
     musicCoordLog('claim-request', { requestId: requestId });
     const response = await runtimeMessage({ type: 'vm-music-claim', requestId: requestId });
@@ -1743,6 +1872,8 @@
   }
   function releasePlayback() {
     if (SINGLE_TAB_DIAGNOSTIC) { playbackLog('diagnostic-release-bypassed'); return; }
+    // Web build: nothing was claimed, so nothing to release.
+    if (!hasExt()) return;
     currentMusicTabId().then(function (tabId) {
       if (tabId == null) return;
       try { chrome.runtime.sendMessage({ type: 'vm-music-release', tabId: tabId }, function () { void chrome.runtime.lastError; }); } catch (e) {}
@@ -1750,6 +1881,8 @@
   }
   async function checkOtherPlayback(showFailure) {
     if (SINGLE_TAB_DIAGNOSTIC) { playbackLog('diagnostic-status-check-bypassed'); return true; }
+    // Web build: no cross-tab owner can exist, so no status check (and no error toast).
+    if (!hasExt()) return true;
     musicCoordLog('status-request');
     const response = await runtimeMessage({ type: 'vm-music-check' });
     if (response.ok !== true || typeof response.playing !== 'boolean') {
@@ -1843,7 +1976,6 @@
     els.prev.addEventListener('click', prev);
     els.next.addEventListener('click', next);
     els.open.addEventListener('click', pickFiles);
-    els.close.addEventListener('click', exit);
     els.fs.addEventListener('click', toggleFullscreen);
     els.widget.addEventListener('click', function () { setWidget(!S.widgetShown); });
     document.addEventListener('fullscreenchange', function () { if (S.built) relabel(); if (!document.fullscreenElement) S.fsByUs = false; });
@@ -2049,8 +2181,15 @@
      CSS همه‌چیز را پنهان می‌کند؛ این جاروب فقط چیزهایی را می‌گیرد که با وجودِ آن هنوز دیده می‌شوند
      (مثلاً ابزاری که خودش !important می‌گذارد یا بعداً به <html>/<body> اضافه می‌شود). */
   const SKIP_TAGS = /^(HEAD|BODY|SCRIPT|STYLE|LINK|META|TITLE|NOSCRIPT|TEMPLATE)$/;
+  // گره‌های خودِ افزونه (ابزارک، پنل‌ها و Music Orb) نباید جاروب شوند؛ شناسه‌های دقیق، نه الگوی باز
+  const EXT_OWNED_IDS = ['ai-orbit-root', 'ai-inline-form', 'ai-quick-note-form', 'ai-calc-panel', 'ai-clock-panel',
+    'ai-todo-panel', 'ai-search-panel', 'ai-tier-dots', 'ai-hub-dots', 'ai-star-editor-popup', 'void-music-remote-host'];
   let sweepObs = null, sweepT = 0;
-  function isOurs(n) { return n.id === 'starfield' || n.id === 'void-music-root' || n.id === 'void-music-mini' || (n.classList && n.classList.contains('space-vignette')); }
+  function isOurs(n) {
+    return n.id === 'starfield' || n.id === 'void-music-root' || n.id === 'void-music-mini' ||
+      EXT_OWNED_IDS.indexOf(n.id) >= 0 ||
+      (n.classList && (n.classList.contains('space-vignette') || n.classList.contains('ai-toast-notification')));
+  }
   function visibleNow(n) {
     const cs = getComputedStyle(n);
     if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.04) return false;
@@ -2191,6 +2330,8 @@
   }
   function dismissMini() {
     S.token++;
+    const cur = trackById(S.curId);
+    if (cur && cur.url) emitRemoteFor(cur, 'inactive');
     if (S.audio) { S.audio.pause(); S.audio.removeAttribute('src'); try { S.audio.load(); } catch (e) {} }
     if (S.url) { try { URL.revokeObjectURL(S.url); } catch (e) {} S.url = null; }
     S.curId = null;
@@ -2397,7 +2538,7 @@
     pushRemote(true);
   }
   function focusSelf() {
-    try { chrome.tabs.getCurrent(function (tab) { if (tab) { chrome.tabs.update(tab.id, { active: true }).catch(function () {}); chrome.windows.update(tab.windowId, { focused: true }).catch(function () {}); } }); } catch (e) {}
+    try { chrome.tabs.getCurrent(function (tab) { if (tab) { chrome.tabs.update(tab.id, { active: true }); chrome.windows.update(tab.windowId, { focused: true }); } }); } catch (e) {}
   }
   if (hasExt()) {
     musicCoordLog('player-page-initialized');
@@ -2469,7 +2610,7 @@
       }
       return { title: rect(els.title), artist: rect(els.artist), stars: stars };
     },
-    getState: function () { return { tracks: S.tracks.length, current: S.curId, playing: !!(S.audio && !S.audio.paused), bag: S.bag.length, history: S.history.length, vol: S.vol, muted: S.muted, quiet: !!(root && root.classList.contains('is-quiet')), popOpen: !!(S.built && anyPop()), widget: S.widgetShown, mini: !!(S.miniWrap && S.miniWrap.classList.contains('is-on')) }; },
+    getState: function () { const t = trackById(S.curId); return { tracks: S.tracks.length, current: S.curId, currentUrl: t && t.url ? t.url : null, ended: !!(S.audio && S.audio.ended), playing: !!(S.audio && !S.audio.paused), bag: S.bag.length, history: S.history.length, vol: S.vol, muted: S.muted, quiet: !!(root && root.classList.contains('is-quiet')), popOpen: !!(S.built && anyPop()), widget: S.widgetShown, mini: !!(S.miniWrap && S.miniWrap.classList.contains('is-on')) }; },
     /* سطحِ آزمون، به همان الگوی void-music-viz.js: پیمایشِ پوشه، مجوز و علت‌هایِ خرابی
        بدونِ DOM و بدونِ تقلیدِ منطق قابلِ راندن باشند (آینه‌سازیِ مجدد = ریسکِ واگرایی). */
     _test: {

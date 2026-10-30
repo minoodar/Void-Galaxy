@@ -4,13 +4,13 @@
    ====================================================================== */
 
 /* همه‌چیزِ صفحه جز ستاره‌ها و خودِ پلیر محو می‌شود (نه حذف: وضعیتِ برنامه دست‌نخورده می‌ماند) */
-body.void-music-on > *:not(#starfield):not(.space-vignette):not(#void-music-root):not(#void-music-mini):not(#ai-orbit-root):not(script):not(style):not(link) {
+body.void-music-on > *:not(#starfield):not(.space-vignette):not(#void-music-root):not(#void-music-mini):not(#ai-orbit-root):not(#void-music-remote-host):not(#void-topnav):not(#void-counter):not(#void-golden-status):not(#void-golden-modal):not(script):not(style):not(link) {
     visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
     transition: opacity .5s ease, visibility 0s linear .5s !important;
 }
-body.void-music-leaving > *:not(#starfield):not(.space-vignette):not(#void-music-root):not(#void-music-mini):not(#ai-orbit-root):not(script):not(style):not(link) {
+body.void-music-leaving > *:not(#starfield):not(.space-vignette):not(#void-music-root):not(#void-music-mini):not(#ai-orbit-root):not(#void-music-remote-host):not(#void-topnav):not(#void-counter):not(#void-golden-status):not(#void-golden-modal):not(script):not(style):not(link) {
     transition: opacity .5s ease !important;
 }
 
@@ -299,8 +299,8 @@ body.vm-quiet, body.vm-quiet * { cursor: none !important; }
    فاز ۳: ابزارکِ شناورِ افزونه + آیکونِ شناورِ پخش/مکث
    ====================================================================== */
 /* هر چیزی که مستقیم زیرِ <html> (کنارِ head/body) افزوده شده — مثلاً ابزارکِ شناورِ content.js — در Music Mode پنهان است،
-   مگر کاربر با دکمهٔ ابزارک نشانش بدهد (کلاسِ vm-widget) */
-html.vm-on:not(.vm-widget) > *:not(head):not(body):not(script):not(style):not(link):not(meta):not(title) {
+   جز گره‌های خودِ افزونه که با شناسه‌های دقیق استثنا شده‌اند (هیچ سلکتور عمومی/گسترده‌ای باز نمی‌شود). */
+html.vm-on:not(.vm-widget) > *:not(head):not(body):not(script):not(style):not(link):not(meta):not(title):not(#ai-orbit-root):not(#void-music-remote-host):not(#ai-inline-form):not(#ai-quick-note-form):not(#ai-calc-panel):not(#ai-clock-panel):not(#ai-todo-panel):not(#ai-search-panel):not(#ai-tier-dots):not(#ai-hub-dots):not(#ai-star-editor-popup):not(.ai-toast-notification) {
     visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
@@ -310,15 +310,8 @@ html.vm-on:not(.vm-widget) > *:not(head):not(body):not(script):not(style):not(li
 
 
 
-/* ======================================================================
-   ابزارکِ شناورِ افزونه (content.js → #ai-orbit-root) در Music Mode
-   display:none یعنی هیچ visibility/opacity/!importantِ داخلی‌ای نمی‌تواند برش گرداند.
-   دکمهٔ «ابزارک» (کلاسِ vm-widget روی <html>) دوباره نشانش می‌دهد.
-   ====================================================================== */
-html.vm-on:not(.vm-widget) #ai-orbit-root,
-html.vm-on:not(.vm-widget) body #ai-orbit-root,
-html.vm-on:not(.vm-widget) #ai-orbit-root * { display: none !important; }
-/* هر چیزی که جاروبِ جاوااسکریپت پیدا و پنهان کرده (data-vm-swept) */
+/* هر چیزی که جاروبِ جاوااسکریپت پیدا و پنهان کرده (data-vm-swept).
+   گره‌های افزونه هرگز جاروب نمی‌شوند (isOurs در void-music.js). */
 html.vm-on:not(.vm-widget) [data-vm-swept] { display: none !important; }
 
 /* چیپِ «نسخهٔ خصوصی» در سرِ صف */
@@ -334,15 +327,6 @@ html.vm-on:not(.vm-widget) [data-vm-swept] { display: none !important; }
 .vm-web-chip.is-failed { border-color: rgba(240, 130, 130, .5); color: rgba(248, 172, 162, .92); }
 .vm-web-chip.is-idle { opacity: .72; }
 
-/* FINAL-WIDGET-RULES
-   ابزارکِ شناورِ افزونه (content.js → #ai-orbit-root) در Music Mode کاملاً پنهان است، مگر کاربر با دکمهٔ ابزارک
-   (کلاسِ vm-widget) نشانش بدهد. فرزندان هم صریحاً پنهان می‌شوند تا visibility:visible داخلی‌شان جلویش را نگیرد. */
-html.vm-on:not(.vm-widget) #ai-orbit-root,
-html.vm-on:not(.vm-widget) #ai-orbit-root * {
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
 /* آیکونِ پخش/مکث فقط بیرون از Music Mode */
 body.void-music-on > #void-music-mini, body.void-music-on > .vm-mini-wrap { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
 
@@ -486,3 +470,143 @@ html[dir="rtl"] #ai-ntp-fs-btn { order: -99; }
 @media (pointer: coarse) { .vm-vol-pop input[type="range"] { width: 180px; height: 36px; } .vm-vol-pop input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -9px; } }
 /* آیکونِ دکمهٔ صدا سطح را نشان می‌دهد: صفر = خط‌خطی، کم = یک موج، بالا = دو موج */
 .vm-vol[data-level="1"] .vm-waves path:nth-child(2) { display: none; }
+
+/* ---- Web build only: top-center navigation canopy ---- */
+#void-topnav {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    z-index: 1100;
+    width: min(420px, calc(100vw - 24px));
+    height: 0;
+    transform: translateX(-50%);
+    pointer-events: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+}
+.void-topnav__handle {
+    position: absolute;
+    top: 0; left: 50%;
+    z-index: 2;
+    width: 64px; height: 44px;
+    margin: 0; padding: 0;
+    transform: translateX(-50%);
+    display: flex; align-items: flex-start; justify-content: center;
+    border: 0; border-radius: 0 0 12px 12px;
+    background: transparent;
+    -webkit-appearance: none; appearance: none;
+    pointer-events: auto;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.void-topnav__grip {
+    display: block;
+    width: 34px; height: 4px;
+    margin-top: calc(7px + env(safe-area-inset-top, 0px));
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(235, 240, 245, .12), rgba(235, 240, 245, .46) 50%, rgba(235, 240, 245, .12));
+    box-shadow: 0 1px 5px rgba(0, 0, 0, .55);
+    transition: background .2s ease, box-shadow .2s ease;
+}
+.void-topnav__handle:hover .void-topnav__grip {
+    background: linear-gradient(90deg, rgba(245, 247, 250, .20), rgba(245, 247, 250, .70) 50%, rgba(245, 247, 250, .20));
+}
+#void-topnav.is-open .void-topnav__grip {
+    background: linear-gradient(90deg, rgba(251, 191, 36, .14), rgba(251, 191, 36, .62) 50%, rgba(251, 191, 36, .14));
+    box-shadow: 0 1px 8px rgba(251, 191, 36, .16);
+}
+.void-topnav__handle:focus { outline: none; }
+.void-topnav__handle:focus-visible .void-topnav__grip {
+    box-shadow: 0 0 0 2px rgba(235, 240, 245, .80), 0 1px 6px rgba(0, 0, 0, .6);
+}
+.void-topnav__canopy {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: calc(44px + env(safe-area-inset-top, 0px)) 22px 12px;
+    border: 1px solid rgba(216, 226, 238, .10);
+    border-top: 0;
+    border-radius: 0 0 50% 50% / 0 0 22px 22px;
+    background:
+        radial-gradient(120% 130% at 50% 0%, rgba(20, 24, 33, .80) 0%, rgba(8, 10, 16, .84) 52%, rgba(3, 4, 8, .76) 100%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    backdrop-filter: blur(14px) saturate(120%);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, .48), 0 -6px 18px rgba(0, 0, 0, .35);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(calc(-100% - 4px));
+    transition: opacity .24s ease, transform .34s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .34s;
+}
+.void-topnav__canopy::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 22%; right: 22%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(244, 231, 197, .22), transparent);
+}
+#void-topnav.is-open .void-topnav__canopy {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+    transition: opacity .3s ease, transform .42s cubic-bezier(.22, 1, .36, 1), visibility 0s;
+}
+.void-topnav__list {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0;
+    margin: 0; padding: 0;
+    list-style: none;
+}
+.void-topnav__list > li { display: flex; align-items: center; min-width: 0; }
+.void-topnav__list > li + li::before {
+    content: "";
+    width: 3px; height: 3px;
+    margin: 0 13px;
+    flex: none;
+    border-radius: 50%;
+    background: rgba(251, 191, 36, .38);
+    box-shadow: 0 0 6px rgba(251, 191, 36, .12);
+}
+.void-topnav__link {
+    display: inline-block;
+    padding: 7px 3px;
+    border-radius: 6px;
+    color: rgba(226, 232, 240, .72);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: .045em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color .18s ease;
+}
+.void-topnav__link:hover { color: rgba(251, 191, 36, .92); }
+.void-topnav__link:focus-visible {
+    outline: 1px solid rgba(235, 240, 245, .72);
+    outline-offset: 2px;
+    color: rgba(250, 252, 255, .96);
+}
+@media (max-width: 520px) {
+    #void-topnav { width: calc(100vw - 16px); }
+    .void-topnav__handle { width: 44px; }
+    .void-topnav__canopy { padding: calc(44px + env(safe-area-inset-top, 0px)) 10px 12px; border-radius: 0 0 50% 50% / 0 0 20px 20px; }
+    .void-topnav__list > li + li::before { width: 2px; height: 2px; margin: 0 9px; }
+    .void-topnav__link { font-size: 11px; letter-spacing: .03em; padding: 8px 2px; }
+}
+@media (max-width: 359px) {
+    .void-topnav__list > li + li::before { margin: 0 7px; }
+    .void-topnav__link { font-size: 10.5px; letter-spacing: .01em; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .void-topnav__canopy {
+        transform: none;
+        transition: opacity .18s ease, visibility 0s linear .18s;
+    }
+    #void-topnav.is-open .void-topnav__canopy {
+        transform: none;
+        transition: opacity .18s ease;
+    }
+    .void-topnav__grip, .void-topnav__link { transition: none; }
+}

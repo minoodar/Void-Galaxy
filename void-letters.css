@@ -1,0 +1,684 @@
+/* ======================================================================
+   Void Galaxy Music — «پیام‌های کهکشان» (فاز ۱: پوستهٔ بصری + رابطِ محلی).
+   همه‌چیز داخلِ #void-music-root ساخته می‌شود تا نه قاعدهٔ سرکوبِ Music Mode
+   و نه sweep() آن را پنهان کند. هیچ وابستگی بیرونی و هیچ انیمیشنِ اجباری ندارد.
+   ====================================================================== */
+
+/* ---- تبلتِ آمار کهکشان: بازدیدکننده‌ها و نامه‌ها در یک جا ----
+   یک دکمهٔ کوچک پایین‌راست که هر دو عدد را نشان می‌دهد؛ پنلش با جاوااسکریپت
+   نسبت به همان دکمه جای‌گذاری می‌شود تا در هیچ viewportی روی کنترل‌ها نیفتد. */
+#void-galaxy-stats {
+    position: fixed;
+    z-index: 3;
+    right: max(14px, env(safe-area-inset-right, 0px));
+    bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 8px;
+    margin: 0;
+    padding: 6px 11px 6px 9px;
+    border: 1px solid rgba(235, 240, 245, .18);
+    border-radius: 999px;
+    background: rgba(8, 10, 14, .42);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+    color: rgba(235, 240, 245, .78);
+    font: 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-variant-numeric: tabular-nums;
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none; -webkit-user-select: none;
+    opacity: 0; visibility: hidden; transform: translateY(4px) scale(.96);
+    transition: opacity .35s ease, transform .4s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .4s;
+}
+#void-galaxy-stats[hidden] { display: none; }
+#void-galaxy-stats.is-on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+#void-galaxy-stats:focus-visible { outline: 2px solid rgba(220, 230, 240, .85); outline-offset: 3px; }
+
+.vm-gs__dot {
+    width: 6px; height: 6px; flex: none; border-radius: 50%;
+    background: rgba(251, 191, 36, .85);
+    box-shadow: 0 0 7px rgba(251, 191, 36, .32);
+}
+.vm-gs__fig { display: flex; align-items: baseline; gap: 4px; }
+.vm-gs__n { font-size: 11.5px; font-weight: 600; color: rgba(250, 252, 255, .92); }
+.vm-gs__l {
+    font-size: 9px; letter-spacing: .09em; text-transform: uppercase;
+    color: rgba(235, 240, 245, .55);
+}
+.vm-gs__sep { width: 1px; height: 11px; flex: none; background: rgba(235, 240, 245, .18); }
+
+#void-galaxy-stats-panel {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 3;
+    box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 7px;
+    width: min(248px, calc(100vw - 20px));
+    padding: 12px 13px 11px;
+    border: 1px solid rgba(235, 240, 245, .16);
+    border-radius: 14px;
+    background:
+        radial-gradient(120% 100% at 50% -10%, rgba(251, 191, 36, .07), transparent 62%),
+        rgba(9, 12, 18, .93);
+    -webkit-backdrop-filter: blur(14px) saturate(115%);
+            backdrop-filter: blur(14px) saturate(115%);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .62), 0 0 0 1px rgba(0, 0, 0, .3);
+    color: rgba(250, 252, 255, .94);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    pointer-events: auto;
+    opacity: 0; visibility: hidden; transform: translateY(4px) scale(.99);
+    transition: opacity .2s ease, transform .26s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .26s;
+}
+#void-galaxy-stats-panel[hidden] { display: none; }
+#void-galaxy-stats-panel.is-on {
+    opacity: 1; visibility: visible; transform: none; transition-delay: 0s;
+}
+
+.vm-gs-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.vm-gs-row b {
+    font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+    color: rgba(250, 252, 255, .96);
+}
+.vm-gs-row span {
+    font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase;
+    color: rgba(235, 240, 245, .55);
+}
+.vm-gs-read { margin-top: 3px; width: 100%; }
+
+/* حالت quiet: رابط خودکار محو می‌شود؛ تبلت کم‌نور می‌شود، ولی ناپدید نمی‌شود */
+body.vm-quiet #void-galaxy-stats { opacity: .5; }
+
+/* ---- دکمهٔ دایره‌ایِ «نامه به خدا» ----
+   همان هندسه و جنسِ دکمه‌های دایره‌ایِ پخش (۴۴px، شیشهٔ ۴۲٪، حاشیهٔ .20، blur 10px)
+   و آخرین قلمِ ستونِ سمت راست: سه نمادِ سایت از وسط صفحهٔ آزاد شروع می‌شوند
+   (همان top در index.html) و قلم ۱۶۲px پایین‌تر، دقیقاً زیرِ آن‌ها. */
+#void-god-quill {
+    position: absolute;
+    top: calc(max(50% - 103px, 30vh + 52px) + 162px);
+    right: max(18px, env(safe-area-inset-right, 0px));
+    z-index: 4;
+    width: 44px; height: 44px;
+    margin: 0; padding: 0;
+    display: grid; place-items: center;
+    transform: none;
+    border: 1px solid rgba(235, 240, 245, .20);
+    border-radius: 50%;
+    background: rgba(8, 10, 14, .42);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+    color: rgba(235, 240, 245, .74);
+    opacity: .78;
+    pointer-events: auto;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-appearance: none; appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity .2s ease, border-color .2s ease, color .2s ease, background .2s ease;
+}
+#void-god-quill svg {
+    display: block;
+    width: 22px; height: 22px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+#void-god-quill:hover {
+    opacity: 1;
+    color: rgba(250, 252, 255, .96);
+    border-color: rgba(235, 240, 245, .4);
+}
+#void-god-quill:active { background: rgba(235, 240, 245, .10); }
+#void-god-quill:focus-visible {
+    outline: 2px solid rgba(220, 230, 240, .9);
+    outline-offset: 4px;
+    opacity: 1;
+}
+#void-music-root.is-quiet #void-god-quill { opacity: .38; }
+
+/* On phones the demo star sits at 22%, not 30%; the column follows the same
+   formula as #void-topnav in index.html. */
+@media (max-width: 520px) {
+    #void-god-quill {
+        top: calc(max(50% - 103px, 22vh + 52px) + 162px);
+    }
+}
+
+/* ---- سطحِ کلیکِ کهکشان ----
+   بومِ ویژوالایزر pointer-events:none دارد و z-index -1 است؛ این لایه شفاف
+   داخلِ ریشه و پیش از داک/گوشه/عنوان می‌نشیند، پس فقط فضای خالیِ کهکشان را
+   می‌گیرد و هیچ دکمه‌ای را نمی‌بلعد. رنگ، تصویر یا حرکت ندارد. */
+#void-god-galaxy {
+    position: absolute; inset: 0;
+    z-index: 0;
+    background: transparent;
+    pointer-events: auto;
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- ستارهٔ موقتِ همان کلیک ----
+   در هر لحظه حداکثر یک ستاره؛ در محل کلیک ساخته و پس از بسته‌شدن حذف می‌شود.
+   هیچ ستاره‌ای به آرایه/ویژوالایزر اضافه نمی‌شود. */
+#void-god-anchor {
+    position: fixed;
+    z-index: 5;
+    width: 44px; height: 44px;
+    margin: 0; padding: 0;
+    display: grid; place-items: center;
+    transform: translate(-50%, -50%);
+    border: 0; border-radius: 50%;
+    background: transparent;
+    -webkit-appearance: none; appearance: none;
+    pointer-events: auto;
+    cursor: pointer;
+    opacity: .62;
+    transition: opacity .28s ease;
+}
+#void-god-anchor:hover,
+#void-god-anchor:focus-visible { opacity: 1; }
+#void-god-anchor:focus { outline: none; }
+#void-god-anchor:focus-visible {
+    outline: 1px solid rgba(235, 240, 245, .80);
+    outline-offset: 4px;
+}
+#void-god-anchor.is-closing {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.55);
+    transition: opacity .4s ease, transform .45s cubic-bezier(.4, 0, .2, 1);
+}
+#void-music-root.is-quiet #void-god-anchor { opacity: .38; }
+.void-god-anchor__glow {
+    position: absolute;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(251, 191, 36, .30), rgba(251, 191, 36, .10) 45%, transparent 70%);
+    filter: blur(2px);
+    animation: voidGodGlow 7s ease-in-out infinite;
+    pointer-events: none;
+}
+.void-god-anchor__core {
+    position: relative;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, rgba(255, 246, 218, .98), rgba(251, 191, 36, .92) 58%, rgba(251, 191, 36, .55));
+    clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+    animation: voidGodTwinkle 7s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes voidGodTwinkle {
+    0%, 100% { opacity: .62; transform: scale(.88); }
+    48% { opacity: 1; transform: scale(1); }
+}
+@keyframes voidGodGlow {
+    0%, 100% { opacity: .45; transform: scale(.9); }
+    50% { opacity: .9; transform: scale(1.08); }
+}
+
+/* غبارِ کوتاهِ بسته‌شدن؛ چند DOM موقت که بعد از ~۰٫۷ ثانیه حذف می‌شوند. */
+.void-god-ash {
+    position: fixed;
+    z-index: 6;
+    width: 0; height: 0;
+    pointer-events: none;
+}
+.void-god-ash span {
+    position: absolute;
+    left: -1.5px; top: -1.5px;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(251, 191, 36, .95);
+    box-shadow: 0 0 6px rgba(251, 191, 36, .5);
+    opacity: 0;
+    animation: voidGodAsh .62s cubic-bezier(.16, .7, .3, 1) forwards;
+    animation-delay: var(--d, 0s);
+}
+@keyframes voidGodAsh {
+    0% { opacity: 0; transform: translate(0, 0) scale(.6); }
+    16% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(.2); }
+}
+
+/* ---- پنل پیام ----
+   شیشهٔ هم‌خانوادهٔ پنجره‌ها؛ جای آن با JS کنارِ ستاره و داخل ناحیهٔ آزاد
+   (بالای داک، دور از گوشه/ستون) تعیین می‌شود. z آن از قلم و ستاره کمتر است
+   تا هرگز کلیکشان را نگیرد. */
+#void-god-panel {
+    position: fixed;
+    z-index: 3;
+    box-sizing: border-box;
+    display: flex; flex-direction: column;
+    gap: 10px;
+    width: min(380px, calc(100vw - 24px));
+    padding: 16px 16px 14px;
+    border: 1px solid rgba(235, 240, 245, .16);
+    border-radius: 16px;
+    background:
+        radial-gradient(120% 100% at 50% -10%, rgba(251, 191, 36, .07), transparent 62%),
+        rgba(9, 12, 18, .93);
+    -webkit-backdrop-filter: blur(14px) saturate(115%);
+            backdrop-filter: blur(14px) saturate(115%);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .62), 0 0 0 1px rgba(0, 0, 0, .35);
+    color: rgba(250, 252, 255, .94);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    pointer-events: auto;
+    user-select: text; -webkit-user-select: text;
+    overscroll-behavior: contain;
+    overflow: auto;
+    opacity: 0;
+    transform: translateY(6px) scale(.99);
+    transition: opacity .2s ease, transform .26s cubic-bezier(.22, 1, .36, 1);
+}
+#void-god-panel.is-on { opacity: 1; transform: none; }
+#void-god-panel[hidden] { display: none; }
+#void-god-panel:focus { outline: none; }
+
+.void-god-msg-title {
+    margin: 0;
+    font-size: 15.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: .02em;
+    color: rgba(250, 252, 255, .96);
+}
+.void-god-msg-tag {
+    font-size: 10.5px;
+    line-height: 1.4;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(251, 191, 36, .78);
+}
+.void-god-msg-text {
+    margin: 0;
+    color: rgba(250, 252, 255, .94);
+    font-size: 14.5px;
+    line-height: 1.75;
+    letter-spacing: .01em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    unicode-bidi: plaintext;
+    text-align: start;
+    user-select: text; -webkit-user-select: text;
+}
+.void-god-msg-meta {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(235, 240, 245, .5);
+}
+.void-god-panel__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.void-god-panel__status {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: rgba(251, 216, 140, .92);
+}
+.void-god-panel__status[hidden] { display: none; }
+
+/* ---- پنجرهٔ نوشتنِ نامه ---- */
+#void-god-dialog,
+#void-god-dialog * { box-sizing: border-box; }
+#void-god-dialog {
+    position: fixed;
+    inset: auto;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(235, 240, 245, .16);
+    border-radius: 18px;
+    background:
+        radial-gradient(120% 90% at 50% -10%, rgba(251, 191, 36, .07), transparent 60%),
+        linear-gradient(180deg, rgba(13, 16, 23, .985), rgba(5, 7, 11, .99));
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .66), 0 0 0 1px rgba(0, 0, 0, .35);
+    color: rgba(250, 252, 255, .94);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    pointer-events: auto;
+    user-select: text; -webkit-user-select: text;
+    overscroll-behavior: contain;
+}
+#void-god-dialog {
+    width: min(560px, calc(100vw - 24px));
+    max-height: min(88vh, 760px);
+    max-height: min(88dvh, 760px);
+    overflow: auto;
+}
+#void-god-dialog::backdrop {
+    background: rgba(2, 3, 7, .62);
+    -webkit-backdrop-filter: blur(6px) saturate(115%);
+            backdrop-filter: blur(6px) saturate(115%);
+}
+#void-god-dialog[open] {
+    animation: voidGodIn .28s cubic-bezier(.22, 1, .36, 1);
+}
+@keyframes voidGodIn {
+    from { opacity: 0; transform: translate(-50%, -48%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+.void-god-form {
+    display: flex; flex-direction: column;
+    gap: 11px;
+    padding: 20px 20px 18px;
+}
+/* پس از ثبتِ واقعی، فرم جای خود را به نمای تأیید می‌دهد. */
+.void-god-form.is-published > :not(.void-god-published) { display: none; }
+
+.void-god-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+.void-god-titles { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.void-god-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: .02em;
+    color: rgba(250, 252, 255, .96);
+}
+.void-god-title-fa {
+    font-size: 12.5px;
+    line-height: 1.4;
+    letter-spacing: 0;
+    color: rgba(251, 191, 36, .78);
+}
+.void-god-x {
+    flex: none;
+    width: 34px; height: 34px;
+    margin: -3px -3px 0 0;
+    display: grid; place-items: center;
+    padding: 0;
+    border: 0; border-radius: 50%;
+    background: rgba(255, 255, 255, .04);
+    color: rgba(235, 240, 245, .70);
+    font-family: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+}
+.void-god-x:hover { background: rgba(255, 255, 255, .09); color: rgba(250, 252, 255, .96); }
+.void-god-x:focus-visible {
+    outline: 2px solid rgba(235, 240, 245, .85);
+    outline-offset: 2px;
+}
+
+.void-god-intro {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(235, 240, 245, .76);
+}
+.void-god-demo {
+    margin: 0;
+    padding: 6px 10px;
+    border: 1px solid rgba(251, 191, 36, .22);
+    border-radius: 8px;
+    background: rgba(251, 191, 36, .06);
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: rgba(251, 191, 36, .86);
+}
+
+.void-god-label {
+    margin-bottom: -5px;
+    font-size: 10.5px;
+    line-height: 1.4;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(235, 240, 245, .55);
+}
+.void-god-text {
+    width: 100%;
+    min-height: 126px;
+    max-height: 34vh;
+    padding: 12px 13px;
+    border: 1px solid rgba(235, 240, 245, .16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .035);
+    color: rgba(250, 252, 255, .96);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.65;
+    letter-spacing: .01em;
+    unicode-bidi: plaintext;
+    resize: vertical;
+    outline: none;
+    user-select: text; -webkit-user-select: text;
+    cursor: text;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+.void-god-text::placeholder { color: rgba(235, 240, 245, .32); }
+.void-god-text:focus {
+    border-color: rgba(251, 191, 36, .55);
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, .10);
+}
+
+.void-god-count-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: -4px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+}
+.void-god-count { flex: none; color: rgba(235, 240, 245, .55); }
+.void-god-count.is-over { color: rgba(240, 161, 150, .96); }
+.void-god-hint { flex: 1; text-align: right; color: rgba(240, 161, 150, .92); }
+
+.void-god-exp { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.void-god-exp-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.void-god-legend {
+    padding: 0;
+    margin-bottom: 7px;
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(235, 240, 245, .55);
+}
+.void-god-exp-opt { position: relative; display: inline-flex; }
+.void-god-exp-opt input {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: 0;
+    opacity: 0;
+}
+.void-god-exp-opt span {
+    padding: 7px 12px;
+    border: 1px solid rgba(235, 240, 245, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .02);
+    color: rgba(235, 240, 245, .72);
+    font-size: 11.5px;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+.void-god-exp-opt:hover span { border-color: rgba(235, 240, 245, .32); }
+.void-god-exp-opt input:checked + span {
+    border-color: rgba(251, 191, 36, .5);
+    background: rgba(251, 191, 36, .12);
+    color: rgba(251, 216, 140, .96);
+}
+.void-god-exp-opt input:focus-visible + span {
+    outline: 1px solid rgba(235, 240, 245, .8);
+    outline-offset: 2px;
+}
+
+.void-god-ack {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(235, 240, 245, .76);
+    cursor: pointer;
+}
+.void-god-ack input {
+    flex: none;
+    width: 16px; height: 16px;
+    margin: 1px 0 0;
+    accent-color: #fbbf24;
+    cursor: pointer;
+}
+.void-god-ack input:focus-visible {
+    outline: 2px solid rgba(235, 240, 245, .8);
+    outline-offset: 2px;
+}
+
+.void-god-notice {
+    margin: 0;
+    padding: 9px 11px;
+    border: 1px solid rgba(251, 191, 36, .28);
+    border-radius: 10px;
+    background: rgba(251, 191, 36, .07);
+    color: rgba(251, 216, 140, .95);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.void-god-notice[hidden] { display: none; }
+
+.void-god-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 2px;
+}
+.void-god-btn {
+    min-height: 38px;
+    padding: 9px 16px;
+    border: 1px solid rgba(235, 240, 245, .18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .03);
+    color: rgba(235, 240, 245, .88);
+    font-family: inherit;
+    font-size: 12.5px;
+    line-height: 1;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease;
+}
+.void-god-btn:hover { border-color: rgba(235, 240, 245, .34); background: rgba(255, 255, 255, .07); }
+.void-god-btn:focus-visible {
+    outline: 2px solid rgba(235, 240, 245, .85);
+    outline-offset: 2px;
+}
+.void-god-btn--primary {
+    border-color: rgba(251, 191, 36, .5);
+    background: rgba(251, 191, 36, .14);
+    color: rgba(251, 222, 150, .98);
+}
+.void-god-btn--primary:hover { background: rgba(251, 191, 36, .22); }
+.void-god-btn:disabled {
+    opacity: .38;
+    cursor: not-allowed;
+}
+
+/* نمای تأییدِ ثبت؛ فقط با پاسخِ واقعی آشکار می‌شود. */
+.void-god-published {
+    display: flex; flex-direction: column;
+    gap: 12px;
+}
+.void-god-published[hidden] { display: none; }
+.void-god-published__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: .02em;
+    color: rgba(250, 252, 255, .96);
+}
+.void-god-published__note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: rgba(235, 240, 245, .68);
+}
+
+/* حالت quiet مخفی‌سازیِ نشانگر را روی کل صفحه اعمال می‌کند؛ متن و دکمه‌های
+   پنجره/پنلِ باز باید نشانگرِ عادی داشته باشند. */
+body.vm-quiet #void-god-dialog,
+body.vm-quiet #void-god-dialog *,
+body.vm-quiet #void-god-panel,
+body.vm-quiet #void-god-panel * { cursor: auto !important; }
+body.vm-quiet #void-god-dialog button,
+body.vm-quiet #void-god-panel button,
+body.vm-quiet #void-god-anchor,
+body.vm-quiet .void-god-ack,
+body.vm-quiet .void-god-ack input,
+body.vm-quiet .void-god-exp-opt span { cursor: pointer !important; }
+body.vm-quiet .void-god-text,
+body.vm-quiet .void-god-msg-text { cursor: text !important; }
+body.vm-quiet .void-god-btn:disabled { cursor: not-allowed !important; }
+
+@media (max-width: 520px) {
+    .vm-gs__l { display: none; }
+    #void-god-dialog { width: calc(100vw - 20px); max-height: 90vh; max-height: 90dvh; }
+    /* The site rail keeps its 44px column at the middle-right on these widths;
+       ending the panel before it keeps every action button clear of the icons. */
+    #void-god-panel { width: calc(100vw - 84px); padding: 14px 14px 12px; }
+    .void-god-form { padding: 16px 15px 14px; gap: 10px; }
+    .void-god-text { min-height: 110px; }
+    .void-god-foot .void-god-btn { flex: 1; }
+    .void-god-panel__actions .void-god-btn { flex: 1; }
+}
+
+@media (max-height: 560px) {
+    #void-god-dialog { max-height: 94vh; max-height: 94dvh; }
+    #void-god-text { min-height: 84px; }
+}
+
+/* When the whole column cannot stay in the middle-right band, the quill
+   follows the three marks into the compact top-left strip, 4px under them,
+   same size and same column (see index.html for the tier boundaries). */
+@media (max-width: 520px) and (max-height: 653px),
+       (min-width: 521px) and (max-width: 683px) and (max-height: 688px),
+       (min-width: 684px) and (max-width: 703px) and (max-height: 605px),
+       (min-width: 704px) and (max-height: 379px) {
+    #void-god-quill {
+        left: 64px;
+        right: auto;
+        top: calc(106px + env(safe-area-inset-top, 0px));
+        transform: none;
+        width: 30px; height: 30px;
+    }
+    #void-god-quill svg { width: 16px; height: 16px; }
+    /* In this tier the rail lives top-left, so the panel can use the full width. */
+    #void-god-panel { width: min(380px, calc(100vw - 24px)); }
+}
+/* Under 400px the column shrinks to 22px so it ends at 98px and the pill keeps
+   its own line at 104px. */
+@media (max-width: 703px) and (max-height: 399px), (min-width: 704px) and (max-height: 379px) {
+    #void-god-quill {
+        top: calc(76px + env(safe-area-inset-top, 0px));
+        width: 22px; height: 22px;
+    }
+    #void-god-quill svg { width: 12px; height: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #void-galaxy-stats { transition: none; }
+    #void-galaxy-stats-panel { transition: none; }
+    #void-god-dialog[open] { animation: none; }
+    #void-god-anchor,
+    #void-god-anchor.is-closing,
+    #void-god-panel,
+    #void-god-quill,
+    .void-god-x,
+    .void-god-btn,
+    .void-god-exp-opt span,
+    .void-god-text { transition: none; }
+    .void-god-anchor__glow,
+    .void-god-anchor__core { animation: none; }
+    .void-god-ash span { animation: none; }
+}

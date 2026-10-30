@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Void Galaxy Music</title>
+ <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="icon" type="image/png" href="./favicon.png">
+  <link rel="stylesheet" href="void-music.css">
+  <link rel="stylesheet" href="void-counter.css">
+  <link rel="stylesheet" href="void-letters.css">
+  <link rel="stylesheet" href="void-admin.css">
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body {
+      background:
+        radial-gradient(circle at 50% 42%, #050714 0%, #02030a 58%, #010208 100%);
+    }
+    #void-gl-note {
+      position: fixed;
+      top: max(100px, calc(env(safe-area-inset-top, 0px) + 92px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      width: max-content;
+      max-width: min(560px, calc(100vw - 32px));
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(251, 191, 36, .30);
+      background: rgba(6, 8, 13, .78);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .45);
+      color: rgba(235, 240, 245, .86);
+      font: 13px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      text-align: center;
+      pointer-events: none;
+      animation: vmGlNoteIn .7s cubic-bezier(.22, 1, .36, 1) .15s both;
+    }
+    @keyframes vmGlNoteIn {
+      from { opacity: 0; transform: translate(-50%, -6px); }
+      to   { opacity: 1; transform: translate(-50%, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #void-gl-note { animation: none; }
+    }
+    /* The extension-widget toggle has no counterpart in the web build. */
+    #void-music-root .vm-widget-btn { display: none !important; }
+    #void-reopen {
+      position: fixed;
+      left: 50%;
+      bottom: max(28px, env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      z-index: 2000;
+      padding: 11px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(235, 240, 245, .28);
+      background: rgba(8, 10, 14, .72);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .5);
+      color: rgba(250, 252, 255, .94);
+      font: 500 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      letter-spacing: .02em;
+      cursor: pointer;
+      transition: border-color .2s ease, background .2s ease;
+    }
+    #void-reopen:hover { border-color: rgba(251, 191, 36, .55); background: rgba(12, 15, 22, .86); }
+    #void-reopen:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); outline-offset: 4px; }
+    #void-reopen[hidden] { display: none; }
+
+    /* Site rail: the three marks and the quill form one vertical column at the
+       middle-right, quill last. 4 × 44px + 3 × 10px = 206px, so the column is
+       centred by starting 103px above the middle; the quill starts 162px below
+       that (see #void-god-quill in void-letters.css). On shorter windows the
+       centre would meet the demo star, so the column slides down just below it
+       instead of moving out of the middle altogether. */
+    #void-topnav.void-topnav--rail {
+      position: fixed;
+      top: max(calc(50% - 103px), calc(30vh + 52px));
+      right: max(18px, env(safe-area-inset-right, 0px));
+      left: auto;
+      z-index: 1100;
+      width: auto; height: auto;
+      transform: none;
+      pointer-events: none;
+      /* Music Mode's stray sweep hides direct body children that still paint;
+         an unpainted wrapper is skipped, and the list restores visibility. */
+      visibility: hidden;
+    }
+    .void-topnav__rail {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px;
+      margin: 0; padding: 0;
+      list-style: none;
+      pointer-events: none;
+      visibility: visible;
+    }
+    .void-topnav__rail > li { display: flex; pointer-events: none; }
+    .void-topnav__link--action { background: none; border: 0; font-family: inherit; cursor: pointer; }
+    .void-topnav__link--action[aria-busy="true"] { color: rgba(251, 191, 36, .92); }
+    /* The shapes are the only visible label; aria-label + title carry the name.
+       Every mark is 44px like the quill and the circular player buttons. */
+    .void-topnav__link.void-topnav__icon {
+      display: grid; place-items: center;
+      box-sizing: border-box;
+      width: 44px; height: 44px;
+      margin: 0; padding: 0;
+      border: 1px solid rgba(235, 240, 245, .20);
+      border-radius: 50%;
+      background: rgba(8, 10, 14, .42);
+      -webkit-backdrop-filter: blur(10px);
+              backdrop-filter: blur(10px);
+      color: rgba(235, 240, 245, .74);
+      opacity: .78;
+      pointer-events: auto;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-appearance: none; appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity .2s ease, border-color .2s ease, color .2s ease, background .2s ease;
+    }
+    .void-topnav__link.void-topnav__icon svg {
+      display: block;
+      width: 22px; height: 22px;
+      fill: none; stroke: currentColor;
+      stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .void-topnav__link.void-topnav__icon:hover {
+      opacity: 1; color: rgba(250, 252, 255, .96); border-color: rgba(235, 240, 245, .4);
+    }
+    .void-topnav__link.void-topnav__icon:active { background: rgba(235, 240, 245, .10); }
+    .void-topnav__link.void-topnav__icon:focus-visible {
+      outline: 2px solid rgba(220, 230, 240, .9); outline-offset: 4px; opacity: 1;
+    }
+    /* On phones the demo star sits at 22%, not 30%. */
+    @media (max-width: 520px) {
+      #void-topnav.void-topnav--rail {
+        top: max(calc(50% - 103px), calc(22vh + 52px));
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .void-topnav__link.void-topnav__icon { transition: none; }
+    }
+    /* When neither the centred nor the star-clearing position can keep the whole
+       206px column off the meta/dock (narrow windows) or above the bottom edge
+       (very short ones), the four controls move together to the compact top-left
+       strip: still one column, still quill last (see void-letters.css). */
+    @media (max-width: 520px) and (max-height: 653px),
+           (min-width: 521px) and (max-width: 683px) and (max-height: 688px),
+           (min-width: 684px) and (max-width: 703px) and (max-height: 605px),
+           (min-width: 704px) and (max-height: 379px) {
+      #void-topnav.void-topnav--rail {
+        top: calc(4px + env(safe-area-inset-top, 0px));
+        left: 64px;
+        right: auto;
+        transform: none;
+      }
+      .void-topnav__rail { gap: 4px; }
+      .void-topnav__link.void-topnav__icon { width: 30px; height: 30px; }
+      .void-topnav__link.void-topnav__icon svg { width: 16px; height: 16px; }
+    }
+    /* Under 400px there is no room for 30px marks above the meta row either:
+       the same column continues at 22px and still clears the status pill. */
+    @media (max-width: 703px) and (max-height: 399px), (min-width: 704px) and (max-height: 379px) {
+      .void-topnav__rail { gap: 2px; }
+      .void-topnav__link.void-topnav__icon { width: 22px; height: 22px; }
+      .void-topnav__link.void-topnav__icon svg { width: 12px; height: 12px; }
+    }
+
+    /* Minimal streaming status: one pill under the top edge, clear of the top-left
+       counter; never a panel. */
+    #void-golden-status {
+      position: fixed; top: calc(104px + env(safe-area-inset-top, 0px)); left: 50%;
+      z-index: 1090; transform: translate(-50%, -3px);
+      display: flex; align-items: center; gap: 8px;
+      max-width: min(340px, calc(100vw - 24px));
+      padding: 7px 12px; border-radius: 999px;
+      border: 1px solid rgba(235, 240, 245, .18);
+      background: rgba(8, 10, 14, .78);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, .42);
+      color: rgba(235, 240, 245, .86);
+      font: 12px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      letter-spacing: .01em;
+      pointer-events: none; opacity: 0; visibility: hidden;
+      transition: opacity .2s ease, transform .2s ease, visibility 0s linear .2s;
+    }
+    #void-golden-status.is-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .2s ease, transform .2s ease; }
+    #void-golden-status.is-action { pointer-events: auto; }
+    #void-golden-status.is-error { border-color: rgba(240, 130, 130, .42); }
+    #void-golden-status[hidden] { display: none; }
+    .void-golden-status__dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: rgba(251, 191, 36, .9); box-shadow: 0 0 8px rgba(251, 191, 36, .35); }
+    #void-golden-status.is-loading .void-golden-status__dot,
+    #void-golden-status.is-buffering .void-golden-status__dot { animation: vgPulse 1.4s ease-in-out infinite; }
+    #void-golden-status.is-playing .void-golden-status__dot { background: rgba(190, 225, 195, .95); box-shadow: 0 0 8px rgba(190, 225, 195, .3); animation: none; }
+    #void-golden-status.is-error .void-golden-status__dot { background: rgba(240, 150, 140, .95); box-shadow: 0 0 8px rgba(240, 130, 130, .35); animation: none; }
+    #void-golden-status.is-blocked { border-color: rgba(251, 191, 36, .34); }
+    #void-golden-status.is-blocked .void-golden-status__dot { animation: none; }
+    .void-golden-status__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .void-golden-status__action {
+      flex: none; padding: 3px 10px; border-radius: 999px; cursor: pointer;
+      border: 1px solid rgba(251, 191, 36, .45);
+      background: rgba(251, 191, 36, .12);
+      color: rgba(251, 216, 140, .96); font: inherit;
+    }
+    .void-golden-status__action:hover { background: rgba(251, 191, 36, .22); }
+    .void-golden-status__action:focus-visible { outline: 1px solid rgba(235, 240, 245, .8); outline-offset: 2px; }
+    .void-golden-status__action[hidden] { display: none; }
+    @keyframes vgPulse { 0%, 100% { opacity: .45; transform: scale(.82); } 50% { opacity: 1; transform: scale(1); } }
+    @media (max-width: 380px) {
+      #void-golden-status { top: calc(124px + env(safe-area-inset-top, 0px)); max-width: calc(100vw - 20px); }
+    }
+    /* In the compact top-left tier the column ends at 136px, so the centered
+       pill would cross it on narrow screens; it drops below the column while
+       there is room (height >= 400px). Under 400px the 22px column ends at
+       98px and the pill keeps its usual line. */
+    @media (max-width: 520px) and (max-height: 653px),
+           (min-width: 521px) and (max-width: 683px) and (max-height: 688px),
+           (min-width: 684px) and (max-width: 703px) and (max-height: 605px),
+           (min-width: 704px) and (max-height: 379px) {
+      #void-golden-status { top: calc(142px + env(safe-area-inset-top, 0px)); }
+    }
+    @media (max-width: 703px) and (max-height: 399px), (min-width: 704px) and (max-height: 379px) {
+      #void-golden-status { top: calc(104px + env(safe-area-inset-top, 0px)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #void-golden-status { transition: opacity .12s ease, visibility 0s linear .12s; }
+      .void-golden-status__dot { animation: none !important; }
+    }
+
+    /* Golden Folder selector: one glass window over the existing player.
+       Only transform/opacity animate; the sheen is two clipped light layers. */
+    #void-golden-modal {
+      width: min(440px, calc(100vw - 24px));
+      max-height: min(82dvh, 640px);
+      margin: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 20px;
+      /* Deep-space glass: the galaxy stays visible through the window; only the
+         text layer is dense enough to keep every label readable. */
+      background: linear-gradient(180deg, rgba(5, 7, 12, .26) 0%, rgba(2, 3, 8, .42) 100%);
+      -webkit-backdrop-filter: blur(7px) saturate(118%);
+      backdrop-filter: blur(7px) saturate(118%);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(235, 240, 245, .10);
+      color: rgba(250, 252, 255, .95);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .45);
+      overflow: hidden;
+      font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #void-golden-modal[open] { display: block; animation: vgmIn .22s cubic-bezier(.22, 1, .36, 1); }
+    #void-golden-modal::backdrop {
+      background: rgba(2, 3, 8, .22);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      #void-golden-modal { background: rgba(5, 7, 12, .90); }
+      #void-golden-modal::backdrop { background: rgba(2, 3, 8, .74); }
+    }
+    @keyframes vgmIn {
+      from { opacity: 0; transform: translateY(6px) scale(.985); }
+      to   { opacity: 1; transform: none; }
+    }
+    .void-golden-modal__sheen {
+      position: absolute;
+      inset: -45% -25%;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, .07) 46%, rgba(251, 191, 36, .04) 51%, transparent 63%),
+        radial-gradient(58% 44% at 24% 16%, rgba(251, 191, 36, .06), transparent 72%);
+      opacity: .32;
+      transform: translate3d(-16%, 6%, 0);
+      animation: vgmSheen 12s ease-in-out infinite alternate;
+      will-change: transform, opacity;
+    }
+    .void-golden-modal__sheen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(42% 34% at 74% 84%, rgba(190, 210, 255, .05), transparent 72%);
+      opacity: .42;
+      animation: vgmBreathe 7.5s ease-in-out infinite alternate;
+    }
+    @keyframes vgmSheen {
+      0%   { transform: translate3d(-18%, 8%, 0); opacity: .20; }
+      50%  { opacity: .36; }
+      100% { transform: translate3d(18%, -8%, 0); opacity: .24; }
+    }
+    @keyframes vgmBreathe {
+      from { opacity: .12; transform: translate3d(0, 2%, 0) scale(.96); }
+      to   { opacity: .34; transform: translate3d(-2%, -2%, 0) scale(1.04); }
+    }
+    .void-golden-modal__panel {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: inherit;
+      padding: 22px 22px max(18px, calc(env(safe-area-inset-bottom, 0px) + 14px));
+    }
+    .void-golden-modal__head { display: flex; align-items: baseline; justify-content: flex-start; gap: 9px; }
+    .void-golden-modal__title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: .015em;
+      color: rgba(250, 252, 255, .96);
+    }
+    .void-golden-modal__title::before {
+      content: "";
+      display: inline-block;
+      width: 2px;
+      height: 12px;
+      margin-right: 9px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, rgba(251, 191, 36, .82), rgba(251, 191, 36, .22));
+      vertical-align: -1px;
+    }
+    .void-golden-modal__total {
+      flex: none;
+      align-self: center;
+      padding: 1px 8px;
+      border: 1px solid rgba(251, 191, 36, .20);
+      border-radius: 999px;
+      background: rgba(251, 191, 36, .06);
+      color: rgba(255, 228, 168, .82);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: .075em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .void-golden-modal__count {
+      flex: none;
+      font-size: 11px;
+      letter-spacing: .04em;
+      color: rgba(235, 240, 245, .62);
+      transition: color .18s ease;
+    }
+    .void-golden-modal__count.is-active { color: rgba(255, 228, 168, .80); }
+    .void-golden-modal__tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .void-golden-modal__all {
+      padding: 2px 0;
+      border: 0;
+      background: none;
+      color: rgba(251, 191, 36, .86);
+      font: inherit;
+      font-size: 12px;
+      letter-spacing: .01em;
+      cursor: pointer;
+    }
+    .void-golden-modal__all:hover { color: rgba(255, 214, 120, .98); }
+    .void-golden-modal__all:focus-visible { outline: 1px solid rgba(235, 240, 245, .7); outline-offset: 3px; border-radius: 4px; }
+    .void-golden-modal__all:disabled { opacity: .4; cursor: default; }
+    .void-golden-modal__list {
+      flex: 1 1 auto;
+      min-height: 0;
+      /* Fixed to the height of four rows: extra tracks scroll inside instead of growing the dialog. */
+      height: 174.25px;
+      max-height: min(46vh, 360px);
+      margin: 0;
+      padding: 2px 4px 2px 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      list-style: none;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(235, 240, 245, .30) rgba(235, 240, 245, .05);
+    }
+    .void-golden-modal__list::-webkit-scrollbar { width: 6px; }
+    .void-golden-modal__list::-webkit-scrollbar-button { display: none; }
+    .void-golden-modal__list::-webkit-scrollbar-track { border-radius: 999px; background: rgba(235, 240, 245, .05); }
+    .void-golden-modal__list::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(235, 240, 245, .28); }
+    .void-golden-modal__list::-webkit-scrollbar-thumb:hover { background: rgba(235, 240, 245, .44); }
+    .void-golden-modal__row { display: flex; position: relative; }
+    .void-golden-modal__pick {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .18s ease;
+    }
+    .void-golden-modal__pick:hover { background: rgba(235, 240, 245, .045); }
+    .void-golden-modal__pick:focus-within { background: rgba(235, 240, 245, .035); }
+    .void-golden-modal__icon {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      color: rgba(235, 240, 245, .56);
+      transition: color .18s ease;
+    }
+    .void-golden-modal__icon svg { display: block; }
+    .void-golden-modal__pick:hover .void-golden-modal__icon { color: rgba(235, 240, 245, .84); }
+    .void-golden-modal__row.is-playing .void-golden-modal__pick { box-shadow: inset 2px 0 0 rgba(251, 191, 36, .60); }
+    .void-golden-modal__row.is-playing .void-golden-modal__icon { color: rgba(251, 191, 36, .92); }
+    .void-golden-modal__eq { display: none; }
+    .void-golden-modal__row.is-playing .void-golden-modal__note { display: none; }
+    .void-golden-modal__row.is-playing .void-golden-modal__eq { display: block; }
+    .void-golden-modal__eq rect {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: vgEq 1.05s ease-in-out infinite;
+    }
+    .void-golden-modal__eq rect:nth-child(2) { animation-duration: .82s; animation-delay: -.2s; }
+    .void-golden-modal__eq rect:nth-child(3) { animation-duration: 1.25s; animation-delay: -.45s; }
+    @keyframes vgEq {
+      0%, 100% { transform: scaleY(.45); }
+      50%      { transform: scaleY(1); }
+    }
+    .void-golden-modal__now {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+    .void-golden-modal__pick input {
+      appearance: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
+      display: grid;
+      place-content: center;
+      width: 17px;
+      height: 17px;
+      margin: 0;
+      flex: none;
+      border: 1px solid rgba(235, 240, 245, .34);
+      border-radius: 5px;
+      background: rgba(255, 255, 255, .04);
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .void-golden-modal__pick input::after {
+      content: "";
+      width: 9px;
+      height: 5px;
+      border-left: 2px solid #0b0d12;
+      border-bottom: 2px solid #0b0d12;
+      transform: rotate(-45deg) scale(0);
+      transition: transform .14s ease;
+    }
+    .void-golden-modal__pick input:checked { background: rgba(251, 191, 36, .92); border-color: rgba(251, 191, 36, .92); }
+    .void-golden-modal__pick input:checked::after { transform: rotate(-45deg) scale(1); }
+    .void-golden-modal__pick input:focus-visible { outline: 2px solid rgba(235, 240, 245, .75); outline-offset: 3px; }
+    .void-golden-modal__label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13.5px;
+      color: rgba(250, 252, 255, .96);
+    }
+    .void-golden-modal__empty { padding: 18px 8px; color: rgba(235, 240, 245, .62); }
+    /* One quiet line inside the selector only: why online tracks can fail to connect. */
+    .void-golden-modal__net {
+      margin: 0;
+      padding: 0 2px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: rgba(235, 240, 245, .74);
+    }
+    .void-golden-modal__info {
+      width: 14px;
+      height: 14px;
+      margin-right: 7px;
+      vertical-align: -2px;
+      opacity: .55;
+    }
+    .void-golden-modal__foot { display: flex; justify-content: flex-end; gap: 10px; padding-top: 2px; }
+    .void-golden-modal__btn {
+      padding: 9px 16px;
+      border: 1px solid rgba(235, 240, 245, .22);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .05);
+      color: rgba(250, 252, 255, .9);
+      font: inherit;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: background .18s ease, border-color .18s ease, opacity .18s ease;
+    }
+    .void-golden-modal__btn:hover { background: rgba(255, 255, 255, .07); }
+    .void-golden-modal__btn:focus-visible { outline: 2px solid rgba(235, 240, 245, .8); outline-offset: 3px; }
+    .void-golden-modal__btn--primary {
+      border-color: rgba(251, 191, 36, .55);
+      background: rgba(251, 191, 36, .16);
+      color: rgba(255, 230, 170, .98);
+    }
+    .void-golden-modal__btn--primary:hover { background: rgba(251, 191, 36, .26); }
+    .void-golden-modal__btn:disabled { opacity: .38; cursor: default; }
+    .void-golden-modal__btn:disabled:hover { background: rgba(255, 255, 255, .03); }
+    .void-golden-modal__btn--primary:disabled:hover { background: rgba(251, 191, 36, .16); }
+    @media (max-width: 420px) {
+      #void-golden-modal { width: calc(100vw - 20px); border-radius: 18px; }
+      .void-golden-modal__panel { padding: 18px 16px max(14px, calc(env(safe-area-inset-bottom, 0px) + 12px)); }
+      .void-golden-modal__pick { padding: 13px 6px; }
+      .void-golden-modal__list { height: 182.25px; max-height: min(50vh, 380px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #void-golden-modal[open] { animation: none; }
+      .void-golden-modal__sheen,
+      .void-golden-modal__sheen::after { animation: none; opacity: .22; transform: none; }
+      .void-golden-modal__pick,
+      .void-golden-modal__pick input,
+      .void-golden-modal__pick input::after,
+      .void-golden-modal__icon,
+      .void-golden-modal__count,
+      .void-golden-modal__btn { transition: none; }
+      .void-golden-modal__eq rect { animation: none; }
+    }
+
+    /* The galaxy click surface lives inside #void-music-root (z-index 1000) and
+       spans the viewport, so the visitor counter is lifted above it to keep its
+       stats button clickable. Look and position are unchanged. */
+    #void-counter { z-index: 1001; }
+  </style>
+</head>
+<body>
+  <noscript>Void Galaxy Music needs JavaScript to play audio and render the visualizer.</noscript>
+
+  <nav id="void-topnav" class="void-topnav void-topnav--rail" aria-label="Site navigation">
+    <ul class="void-topnav__rail" aria-label="Golden Folder and project links">
+      <li><button id="void-golden-folder" class="void-topnav__link void-topnav__link--action void-topnav__icon" type="button" aria-busy="false" aria-haspopup="dialog" aria-expanded="false" aria-label="Golden Folder" title="Golden Folder"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="7.4"/></svg></button></li>
+      <li><a id="void-topnav-support" class="void-topnav__link void-topnav__icon" href="https://donito.me/u-b8wjr" target="_blank" rel="noopener noreferrer" aria-label="Support" title="Support"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.7 19.7 18.5H4.3Z"/></svg></a></li>
+      <li><a id="void-topnav-creator" class="void-topnav__link void-topnav__icon" href="https://github.com/minoodar" target="_blank" rel="noopener noreferrer" aria-label="Meet the Creator" title="Meet the Creator"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4.9" y="4.9" width="14.2" height="14.2" rx="1.4"/></svg></a></li>
+    </ul>
+  </nav>
+
+  <div id="void-golden-status" role="status" aria-live="polite" aria-hidden="true">
+    <span class="void-golden-status__dot" aria-hidden="true"></span>
+    <span class="void-golden-status__text"></span>
+    <button class="void-golden-status__action" type="button" hidden></button>
+  </div>
+
+  <dialog id="void-golden-modal" aria-labelledby="void-golden-modal-title">
+    <div class="void-golden-modal__sheen" aria-hidden="true"></div>
+    <div class="void-golden-modal__panel">
+      <div class="void-golden-modal__head">
+        <h2 id="void-golden-modal-title" class="void-golden-modal__title">Golden Folder</h2>
+        <span id="void-golden-total" class="void-golden-modal__total">0 tracks</span>
+      </div>
+      <div class="void-golden-modal__tools">
+        <button id="void-golden-select-all" class="void-golden-modal__all" type="button">Select all</button>
+        <span id="void-golden-count" class="void-golden-modal__count" aria-live="polite">0 selected</span>
+      </div>
+      <p id="void-golden-net" class="void-golden-modal__net"><svg class="void-golden-modal__info" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 7.2v4.1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="4.8" r=".85" fill="currentColor"/></svg>In Iran, a VPN may be needed to connect to Cloudflare for online streaming. Local files play without a VPN.</p>
+      <ul id="void-golden-list" class="void-golden-modal__list" aria-label="Golden Folder tracks"></ul>
+      <div class="void-golden-modal__foot">
+        <button id="void-golden-cancel" class="void-golden-modal__btn" type="button">Cancel</button>
+        <button id="void-golden-play" class="void-golden-modal__btn void-golden-modal__btn--primary" type="button" disabled>Play selected</button>
+      </div>
+    </div>
+  </dialog>
+
+  <button id="void-reopen" type="button" hidden>Open music</button>
+
+  <script src="void-music.js"></script>
+  <script src="void-music-viz.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      function showNote(message, parent) {
+        var host = parent || document.body;
+        var note = document.createElement('div');
+        note.id = 'void-gl-note';
+        note.setAttribute('role', 'status');
+        note.textContent = message;
+        host.appendChild(note);
+        return note;
+      }
+
+      function webgl2Available() {
+        try {
+          return !!(window.WebGL2RenderingContext && document.createElement('canvas').getContext('webgl2'));
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function boot() {
+        if (!window.VoidMusic || typeof window.VoidMusic.enter !== 'function') {
+          showNote('The player could not load. Check that void-music.js and void-music.css sit next to this page.');
+          return;
+        }
+
+        /* ?admin=true is a management surface, not the visitor experience: no
+           player keyboard capture and no automatic music mode behind the overlay. */
+        var adminMode = /[?&]admin=(?:1|true)(?:&|#|$)/.test(location.search);
+        if (!adminMode) window.VoidMusic.enter();
+
+        var root = document.getElementById('void-music-root');
+        var reopen = document.getElementById('void-reopen');
+        function syncReopen() { reopen.hidden = !(root && root.hidden); }
+        reopen.addEventListener('click', function () { window.VoidMusic.enter(); });
+        if (root && window.MutationObserver) {
+          new MutationObserver(syncReopen).observe(root, { attributes: true, attributeFilter: ['hidden'] });
+        }
+        syncReopen();
+
+        if (!adminMode && !webgl2Available()) {
+          showNote(
+            'Galaxy view is unavailable because this browser does not support WebGL2. ' +
+            'Playback, queue, seek and volume still work normally.',
+            document.getElementById('void-music-root') || document.body
+          );
+        }
+      }
+
+      // Wait for the first real layout: arc geometry reads window.innerWidth.
+      if (document.readyState === 'complete') requestAnimationFrame(boot);
+      else window.addEventListener('load', function () { requestAnimationFrame(boot); }, { once: true });
+    })();
+  </script>
+  <script src="golden-folder.js"></script>
+  <script>
+    /* Golden Folder — a list-only selector on top of the one shared player. Selected
+       tracks go through VoidMusic.add (same queue, same native streaming); there is
+       no second player, no custom buffer and no parallel queue. */
+    (function () {
+      'use strict';
+
+      if (/[?&]admin=(?:1|true)(?:&|#|$)/.test(location.search)) return;
+
+      /* The static file next to this page is the fallback. When the letters
+         worker answers GET /tracks (after the admin migration is applied), the
+         keeper-managed playlist replaces it without touching the player. */
+      var STATIC = Array.isArray(window.GOLDEN_FOLDER_TRACKS) ? window.GOLDEN_FOLDER_TRACKS : [];
+      var DATA = STATIC.slice();
+      var URLS = new Set();
+      function indexUrls() {
+        URLS.clear();
+        for (var i = 0; i < DATA.length; i++) if (DATA[i] && DATA[i].url) URLS.add(DATA[i].url);
+      }
+      indexUrls();
+
+      var link = document.getElementById('void-golden-folder');
+      var chip = document.getElementById('void-golden-status');
+      var dialog = document.getElementById('void-golden-modal');
+      var listEl = document.getElementById('void-golden-list');
+      var countEl = document.getElementById('void-golden-count');
+      var totalEl = document.getElementById('void-golden-total');
+      var allBtn = document.getElementById('void-golden-select-all');
+      var playBtn = document.getElementById('void-golden-play');
+      var cancelBtn = document.getElementById('void-golden-cancel');
+      if (!link || !chip || !dialog || !listEl || !countEl || !totalEl || !allBtn || !playBtn || !cancelBtn) return;
+
+      var textEl = chip.querySelector('.void-golden-status__text');
+      var actionEl = chip.querySelector('.void-golden-status__action');
+      var boxes = [];
+      var rows = [];
+
+      var busy = false;
+      var hideTimer = 0;
+      var actionKind = '';
+      var activeToken = 0;
+      var terminalToken = 0;
+      var lastEntries = null;
+      var retryEntry = null;
+
+      function playerState() {
+        try { return window.VoidMusic && window.VoidMusic.getState ? window.VoidMusic.getState() : null; } catch (e) { return null; }
+      }
+      function playingUrl() {
+        var st = playerState();
+        if (!st || !st.playing || !st.currentUrl) return '';
+        var a = null;
+        try { a = window.VoidMusic.getAudio ? window.VoidMusic.getAudio() : null; } catch (e) {}
+        /* play() flips `paused` before any sound exists; require buffered playback so a
+           failure is never mistaken for a recovery (or the reverse). */
+        if (a && (a.error || a.readyState < 3)) return '';
+        return st.currentUrl;
+      }
+      function notePlaying(url) {
+        retryEntry = null; terminalToken = 0; setBusy(false);
+        show('playing', 'Playing · ' + titleFor(url), '', '', 6000);
+      }
+
+      function entryFor(url) {
+        for (var i = 0; i < DATA.length; i++) if (DATA[i].url === url) return DATA[i];
+        return null;
+      }
+
+      /* Inline glyphs only: a beamed note for idle rows, three bars that animate while
+         that very track is streaming. */
+      var ICON_SVG =
+        '<svg class="void-golden-modal__note" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
+          '<path d="M5.9 11.05V4.75l7.2-1.6v6.05" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>' +
+          '<circle cx="4.35" cy="11.05" r="1.55" fill="currentColor"/>' +
+          '<circle cx="11.55" cy="9.2" r="1.55" fill="currentColor"/>' +
+        '</svg>' +
+        '<svg class="void-golden-modal__eq" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
+          '<rect x="2.4" y="6" width="2.2" height="8" rx="1.1" fill="currentColor"/>' +
+          '<rect x="6.9" y="2.4" width="2.2" height="11.6" rx="1.1" fill="currentColor"/>' +
+          '<rect x="11.4" y="4.6" width="2.2" height="9.4" rx="1.1" fill="currentColor"/>' +
+        '</svg>';
+
+      function buildList() {
+        listEl.textContent = '';
+        boxes = [];
+        rows = [];
+        for (var i = 0; i < DATA.length; i++) {
+          (function (entry) {
+            var li = document.createElement('li');
+            li.className = 'void-golden-modal__row';
+            var label = document.createElement('label');
+            label.className = 'void-golden-modal__pick';
+            var box = document.createElement('input');
+            box.type = 'checkbox';
+            box.value = entry.id;
+            box.addEventListener('change', syncSelection);
+            var icon = document.createElement('span');
+            icon.className = 'void-golden-modal__icon';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.innerHTML = ICON_SVG;
+            var name = document.createElement('span');
+            name.className = 'void-golden-modal__label';
+            name.textContent = entry.title;
+            label.appendChild(box);
+            label.appendChild(icon);
+            label.appendChild(name);
+            li.appendChild(label);
+            var now = document.createElement('span');
+            now.className = 'void-golden-modal__now';
+            li.appendChild(now);
+            listEl.appendChild(li);
+            boxes.push(box);
+            rows.push(li);
+          })(DATA[i]);
+        }
+        totalEl.textContent = DATA.length + (DATA.length === 1 ? ' track' : ' tracks');
+        if (!DATA.length) {
+          var empty = document.createElement('li');
+          empty.className = 'void-golden-modal__empty';
+          empty.textContent = 'No tracks available.';
+          listEl.appendChild(empty);
+          allBtn.disabled = true;
+        }
+      }
+
+      function selected() {
+        var out = [];
+        for (var i = 0; i < boxes.length; i++) if (boxes[i].checked) out.push(DATA[i]);
+        return out;
+      }
+
+      function syncSelection() {
+        var n = 0;
+        for (var i = 0; i < boxes.length; i++) if (boxes[i].checked) n++;
+        countEl.textContent = n + ' selected';
+        countEl.classList.toggle('is-active', n > 0);
+        playBtn.disabled = busy || n === 0;
+        allBtn.textContent = (n > 0 && n === boxes.length) ? 'Clear all' : 'Select all';
+        allBtn.disabled = boxes.length === 0;
+      }
+
+      /* The row marker uses the same "really playing" test as the chip, so a paused,
+         buffering or failed source never keeps a gold bar alive. */
+      function syncPlaying() {
+        var url = playingUrl();
+        for (var i = 0; i < rows.length; i++) {
+          var on = !!url && DATA[i].url === url;
+          if (rows[i].classList.contains('is-playing') === on) continue;
+          rows[i].classList.toggle('is-playing', on);
+          if (on) rows[i].setAttribute('aria-current', 'true');
+          else rows[i].removeAttribute('aria-current');
+          var now = rows[i].querySelector('.void-golden-modal__now');
+          if (now) now.textContent = on ? 'Now playing' : '';
+        }
+      }
+
+      function setBusy(on) {
+        busy = !!on;
+        link.setAttribute('aria-busy', busy ? 'true' : 'false');
+        syncSelection();
+      }
+
+      function clearHide() {
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+      }
+      function hideChip() {
+        clearHide();
+        chip.className = '';
+        chip.setAttribute('aria-hidden', 'true');
+        /* A hidden pill must not keep a live action behind it. */
+        actionKind = '';
+        actionEl.hidden = true;
+        chip.removeAttribute('aria-label');
+      }
+      function show(state, message, actionLabel, kind, autoHideMs) {
+        clearHide();
+        chip.className = 'is-on is-' + state + (actionLabel ? ' is-action' : '');
+        textEl.textContent = message;
+        actionKind = kind || '';
+        if (actionLabel) {
+          actionEl.hidden = false;
+          actionEl.textContent = actionLabel;
+          chip.setAttribute('aria-label', message + ' — ' + actionLabel);
+        } else {
+          actionEl.hidden = true;
+          chip.removeAttribute('aria-label');
+        }
+        chip.setAttribute('aria-hidden', 'false');
+        if (autoHideMs) hideTimer = setTimeout(hideChip, autoHideMs);
+      }
+
+      function restoreOpenerFocus() {
+        try { link.focus({ preventScroll: true }); } catch (e) {}
+        if (document.activeElement === link) return;
+        var handle = document.getElementById('void-topnav-handle');
+        if (handle) { try { handle.focus({ preventScroll: true }); } catch (e) {} }
+      }
+
+      function openDialog() {
+        /* Every open starts unchecked, even if a Golden Folder track is playing. */
+        for (var i = 0; i < boxes.length; i++) boxes[i].checked = false;
+        syncSelection();
+        syncPlaying();
+        if (!dialog.open) {
+          try { dialog.showModal(); }
+          catch (e) { dialog.setAttribute('open', ''); }
+        }
+        link.setAttribute('aria-expanded', 'true');
+        var first = boxes.length ? boxes[0] : cancelBtn;
+        if (first) { try { first.focus({ preventScroll: true }); } catch (e) {} }
+      }
+
+      function closeDialog() {
+        if (!dialog.open) return;
+        dialog.close();
+        link.setAttribute('aria-expanded', 'false');
+        restoreOpenerFocus();
+      }
+
+      function requestPlay(entries, force) {
+        var VM = window.VoidMusic;
+        if (!VM || typeof VM.add !== 'function') {
+          show('error', 'The player is not ready. Reload the page.', '', '', 0);
+          return;
+        }
+        if (busy && !force) return;
+        if (!entries || !entries.length) return;
+        try { if (!VM.isOpen()) VM.enter(); } catch (e) {}
+        var before = null;
+        try { before = VM.getState ? VM.getState() : null; } catch (e) {}
+        /* The player intentionally leaves an already-playing first track untouched, so
+           no state event will follow: report that real state, not a stalled "Connecting…". */
+        var alreadyPlaying = !force && !!(before && before.playing && before.currentUrl === entries[0].url);
+        setBusy(true);
+        retryEntry = null;
+        lastEntries = entries.map(function (t) {
+          return { url: t.url, title: t.title, artist: t.artist || '', artwork: t.artwork_url || null, golden: true };
+        });
+        if (alreadyPlaying) show('playing', 'Playing · ' + entries[0].title, '', '', 6000);
+        else show('loading', entries.length === 1 ? 'Connecting… · ' + entries[0].title : 'Connecting…', '', '', 0);
+        var p;
+        try { p = VM.add(lastEntries, { playFirst: true, force: !!force }); }
+        catch (e) {
+          setBusy(false);
+          /* The chip sits under the modal's top layer; close it so Retry is reachable. */
+          closeDialog();
+          show('error', 'Could not start the track', 'Retry', 'retry', 0);
+          return;
+        }
+        if (p && typeof p.then === 'function') {
+          p.then(function () {
+            setBusy(false);
+            closeDialog();
+          }, function () {
+            setBusy(false);
+            closeDialog();
+            show('error', 'Could not start the track', 'Retry', 'retry', 0);
+          });
+        } else {
+          setBusy(false);
+          closeDialog();
+        }
+      }
+
+      function titleFor(url) {
+        var entry = entryFor(url);
+        return (entry && entry.title) || 'Golden Folder';
+      }
+
+      /* Managed playlist. A stale worker (404), a missing table (503) or any
+         network failure keeps the static bytes above; a real 200 response,
+         including an intentionally empty list, wins. */
+      function resolveMedia(value) {
+        if (typeof value !== 'string' || !value) return null;
+        try {
+          var u = new URL(value, location.href);
+          return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : null;
+        } catch (e) { return null; }
+      }
+
+      function normalizeTracks(payload) {
+        if (!payload || payload.ok !== true || !Array.isArray(payload.tracks)) return null;
+        var out = [];
+        for (var i = 0; i < payload.tracks.length; i++) {
+          var row = payload.tracks[i];
+          if (!row || typeof row.title !== 'string' || typeof row.audio_url !== 'string') continue;
+          var audio = resolveMedia(row.audio_url);
+          if (!audio) continue;
+          out.push({
+            id: typeof row.id === 'string' ? row.id : 'track-' + i,
+            title: row.title,
+            artist: typeof row.artist === 'string' ? row.artist : '',
+            url: audio,
+            artwork_url: resolveMedia(row.artwork_url),
+            duration: typeof row.duration === 'number' ? row.duration : null,
+            tags: Array.isArray(row.tags) ? row.tags.filter(function (t) { return typeof t === 'string'; }) : []
+          });
+        }
+        return out;
+      }
+
+      function applyTracks(list) {
+        if (dialog.open) { setTimeout(loadManagedTracks, 800); return; }
+        DATA = list;
+        indexUrls();
+        buildList();
+        syncSelection();
+        syncPlaying();
+      }
+
+      function loadManagedTracks() {
+        if (typeof window.fetch !== 'function') return;
+        var api = window.VoidLettersApi;
+        var base = api && typeof api.base === 'string' ? api.base : 'https://void-galaxy-letters.minoodar.workers.dev';
+        var controller = typeof AbortController === 'function' ? new AbortController() : null;
+        var timer = 0;
+        if (controller) timer = setTimeout(function () { try { controller.abort(); } catch (e) {} }, 8000);
+        window.fetch(String(base).replace(/\/+$/, '') + '/tracks', {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          mode: 'cors',
+          credentials: 'omit',
+          signal: controller ? controller.signal : undefined
+        }).then(function (res) {
+          clearTimeout(timer);
+          if (!res || !res.ok) return null;
+          return res.json();
+        }).then(function (payload) {
+          var list = normalizeTracks(payload);
+          if (list) applyTracks(list);
+        }, function () { clearTimeout(timer); });
+      }
+
+      buildList();
+      syncSelection();
+      loadManagedTracks();
+
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        openDialog();
+      });
+
+      allBtn.addEventListener('click', function () {
+        var all = boxes.length > 0;
+        for (var i = 0; i < boxes.length; i++) if (!boxes[i].checked) all = false;
+        for (var j = 0; j < boxes.length; j++) boxes[j].checked = !all;
+        syncSelection();
+      });
+
+      cancelBtn.addEventListener('click', closeDialog);
+
+      playBtn.addEventListener('click', function () {
+        if (busy) return;
+        var picked = selected();
+        if (!picked.length) return;
+        requestPlay(picked, false);
+      });
+
+      actionEl.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (actionKind === 'retry') {
+          var one = retryEntry ? [retryEntry] : lastEntries;
+          if (!one || !one.length) { hideChip(); return; }
+          /* Already recovered while the failure was still on screen: report the real
+             state instead of restarting a track that is playing. */
+          if (playingUrl() === one[0].url) {
+            notePlaying(one[0].url);
+            return;
+          }
+          requestPlay(one, true);
+        } else if (actionKind === 'play') {
+          var st = playerState();
+          if (st && st.playing) { hideChip(); return; }
+          try { window.VoidMusic.toggle(); }
+          catch (err) { show('error', 'Could not start the track', 'Retry', 'retry', 0); }
+        } else {
+          hideChip();
+        }
+      });
+
+      dialog.addEventListener('close', function () {
+        link.setAttribute('aria-expanded', 'false');
+      });
+      dialog.addEventListener('cancel', function (e) {
+        e.preventDefault();
+        closeDialog();
+      });
+      /* The panel fills the dialog box, so a click that targets the dialog itself
+         is a click on the ::backdrop. */
+      dialog.addEventListener('click', function (e) {
+        if (e.target === dialog) closeDialog();
+      });
+
+      /* While the window is open, the player's document-capture shortcuts must not
+         reach playback controls. Space/Enter/Tab stay untouched: checkboxes already
+         pass the player's own typing guard and the backdrop is inert. */
+      var PLAYER_KEYS = { k: 1, m: 1, n: 1, p: 1, f: 1, w: 1, ArrowLeft: 1, ArrowRight: 1, ArrowUp: 1, ArrowDown: 1 };
+      window.addEventListener('keydown', function (e) {
+        if (!dialog.open) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          closeDialog();
+          return;
+        }
+        if (PLAYER_KEYS[e.key] && !e.ctrlKey && !e.metaKey && !e.altKey) e.stopPropagation();
+      }, true);
+
+      window.addEventListener('voidmusic:remote-state', function (e) {
+        var d = e.detail || {};
+        syncPlaying();
+        if (!d || !d.url || !URLS.has(d.url)) return;
+        var title = d.title || titleFor(d.url);
+        /* Another source took over (local file, web player, removed track, stop):
+           a stale "Connecting…" must never stay behind. */
+        if (d.state === 'inactive') { activeToken = 0; terminalToken = 0; retryEntry = null; setBusy(false); hideChip(); return; }
+        if (d.state === 'loading') {
+          /* play() may reject before the native loadstart task lands; a late loadstart
+             of the same attempt must not turn a visible block/error back into "Connecting…". */
+          if (d.token && d.token === terminalToken) return;
+          activeToken = d.token || 0;
+          show('loading', 'Connecting… · ' + title, '', '', 0);
+          return;
+        }
+        /* Playing is checked before the token guard: real playback is the strongest
+           signal, and adopting its token stops a late failure from an older attempt
+           from replacing "Playing" with a Retry that nothing would clear. */
+        if (d.state === 'playing') {
+          if (activeToken && d.token && d.token < activeToken) return;
+          activeToken = d.token || activeToken;
+          notePlaying(d.url);
+          return;
+        }
+        /* A late event from an older attempt (same URL, older token) must not
+           overwrite the status of the attempt that is running now. */
+        if (activeToken && d.token && d.token !== activeToken) return;
+        if (d.state === 'buffering' || d.state === 'stalled') {
+          show('buffering', 'Buffering… · ' + title, '', '', 0);
+        } else if (d.state === 'paused') {
+          // Ignore the pause caused by swapping a local source out; only a real mid-track pause shows.
+          if ((d.readyState || 0) >= 2) {
+            terminalToken = 0; setBusy(false);
+            show('paused', 'Paused · ' + title, 'Play', 'play', 0);
+          }
+        } else if (d.state === 'ended') {
+          terminalToken = 0; setBusy(false);
+          show('ended', 'Ended · ' + title, '', '', 4000);
+        } else if (d.state === 'blocked') {
+          if (playingUrl() === d.url) {
+            if (actionKind === 'play' || chip.className.indexOf('is-blocked') >= 0) notePlaying(d.url);
+            return;
+          }
+          terminalToken = d.token || 0; retryEntry = entryFor(d.url); setBusy(false);
+          show('blocked', 'Playback needs a tap · ' + title, 'Play', 'play', 0);
+        } else if (d.state === 'error') {
+          /* The failure is history if this very URL is already playing again. */
+          if (playingUrl() === d.url) {
+            if (actionKind === 'retry' || chip.className.indexOf('is-error') >= 0) notePlaying(d.url);
+            return;
+          }
+          terminalToken = d.token || 0; retryEntry = entryFor(d.url); setBusy(false);
+          show('error', 'Couldn\u2019t load · ' + title, retryEntry ? 'Retry' : '', retryEntry ? 'retry' : '', 0);
+        }
+      });
+
+      /* Recovery can reach the player without a matching remote-state event (its own
+         play control, a filtered late event). Reconcile the chip with the real state
+         so a Retry/Play pill never outlives the failure it described. */
+      window.addEventListener('voidmusic:playing', function (e) {
+        syncPlaying();
+        if (!e.detail || !e.detail.playing) return;
+        if (actionKind !== 'retry' && actionKind !== 'play' && chip.className.indexOf('is-error') < 0) return;
+        var url = playingUrl();
+        if (!url || !URLS.has(url)) return;
+        notePlaying(url);
+      });
+    })();
+  </script>
+  <script src="void-counter.js" defer></script>
+  <script src="void-letters-api.js" defer></script>
+  <script src="void-letters.js" defer></script>
+  <script src="void-artwork.js" defer></script>
+  <script src="void-admin.js" defer></script>
+</body>
+</html>
