@@ -1,0 +1,488 @@
+/* ======================================================================
+   Void Tab — Music Mode (فاز ۱: هستهٔ پخش + کنترل‌های Stage 0)
+   هیچ انیمیشنِ دائمی ندارد؛ فقط transition روی opacity/transform.
+   ====================================================================== */
+
+/* همه‌چیزِ صفحه جز ستاره‌ها و خودِ پلیر محو می‌شود (نه حذف: وضعیتِ برنامه دست‌نخورده می‌ماند) */
+body.void-music-on > *:not(#starfield):not(.space-vignette):not(#void-music-root):not(#void-music-mini):not(#ai-orbit-root):not(script):not(style):not(link) {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity .5s ease, visibility 0s linear .5s !important;
+}
+body.void-music-leaving > *:not(#starfield):not(.space-vignette):not(#void-music-root):not(#void-music-mini):not(#ai-orbit-root):not(script):not(style):not(link) {
+    transition: opacity .5s ease !important;
+}
+
+#void-music-root {
+    --vm-fg: rgba(235, 240, 245, .74);
+    --vm-fg-hi: rgba(250, 252, 255, .96);
+    --vm-line: rgba(235, 240, 245, .20);
+    --vm-glass: rgba(8, 10, 14, .42);
+    --vm-gold: rgba(251, 191, 36, .85);
+    --vm-rose: rgba(232, 176, 150, .82);
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    gap: 14px;
+    padding: 0 12px max(14px, env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .6s ease .25s;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--vm-fg);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+}
+#void-music-root[hidden] { display: none; }
+#void-music-root.is-on { opacity: 1; }
+
+/* ---- عنوان + جلدِ کوچک و محو ---- */
+.vm-meta {
+    display: flex; align-items: center; gap: 12px;
+    max-width: min(560px, 100%);
+    min-height: 44px;
+    opacity: 1; transition: opacity .28s ease;
+    pointer-events: none;
+}
+.vm-meta.is-out { opacity: 0; }
+.vm-meta.is-blank { visibility: hidden; }
+.vm-cover {
+    width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none;
+    opacity: .55;
+    -webkit-mask-image: radial-gradient(circle, #000 52%, transparent 100%);
+            mask-image: radial-gradient(circle, #000 52%, transparent 100%);
+}
+.vm-cover[hidden] { display: none; }
+.vm-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.vm-title {
+    font-size: 14px; font-weight: 600; letter-spacing: .02em; color: var(--vm-fg-hi);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, .8);
+}
+.vm-artist {
+    font-size: 12px; color: var(--vm-fg); opacity: .8;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vm-artist:empty { display: none; }
+
+/* ---- داک (همیشه چپ‌به‌راست؛ خطِ زمان در RTL هم همان جهتِ استاندارد را دارد) ---- */
+.vm-dock {
+    position: relative; direction: ltr; flex: none;
+    pointer-events: none;
+    transition: opacity .5s ease;
+}
+.vm-arc { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.vm-arc-base { fill: none; stroke: url(#vmArcGrad); stroke-width: 1; }
+.vm-arc-fill { fill: none; stroke: var(--vm-gold); stroke-width: 1.6; stroke-linecap: round; opacity: .9; }
+.vm-tick { stroke: rgba(199, 210, 254, .45); stroke-width: 1; stroke-linecap: round; }
+.vm-thumb {
+    fill: #fbbf24;
+    filter: drop-shadow(0 0 4px rgba(251, 191, 36, .85));
+    transition: transform .26s linear, opacity .3s ease;
+}
+.vm-seek {
+    position: absolute; left: 0; pointer-events: auto; cursor: pointer; touch-action: none;
+    border-radius: 14px; outline: none;
+}
+.vm-seek:focus-visible { box-shadow: 0 0 0 2px rgba(220, 230, 240, .85); }
+.vm-time {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 2px;
+    font-size: 11px; letter-spacing: .06em; color: var(--vm-fg); opacity: .6;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .8);
+}
+
+/* ساعتِ محلیِ دستگاه: سطرِ خودش در باندِ خالیِ بینِ کمان و خطِ زمان.
+   سبک و آرام (رُزِ بی‌درخشش)، بدونِ انیمیشن، pointer-events نمی‌گیرد.
+   روشنایی: opacity .86 (از .74) و سایهٔ متن یک ذره پررنگ‌تر، فقط برای خوانایی روی کهکشانِ
+   پرنور؛ رنگ و فونت و جایگاه دست‌نخورده‌اند (در حالت پخش داک .72 است، پس اثر نهایی ≈ .62 است).
+   با layout() سنجیده شده: با top/base از فرمولِ dock، بازهٔ [base-1, base+12]
+   را می‌گیرد؛ کمان در مرکز base-26 (عریض) / base-16 (فشرده) است و تیک‌ها تا
+   ۱۰px پایین‌تر، و خطِ زمان از base+20 آغاز می‌شود → در هیچ پهنایی برخوردی نیست.
+   در حالتِ خالی هم پنهان می‌ماند، چون همان‌جا برچسبِ «باز کردنِ موسیقی» روی
+   همین سطر می‌آید و زمانِ trak أصلاً نمایش داده نمی‌شود. */
+.vm-clock {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 24px;
+    display: flex; align-items: center; gap: 5px; line-height: 1;
+    font-size: 10.5px; font-weight: 300; letter-spacing: .14em;
+    color: var(--vm-rose); opacity: .86;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .65);
+    pointer-events: none; user-select: none;
+}
+.vm-clock-g {
+    font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "Apple Symbols", sans-serif;
+    font-size: 11px; line-height: 1; opacity: .92;
+}
+
+/* ---- دکمه‌های دایره‌ای شیشه‌ای ---- */
+.vm-btn {
+    position: absolute; width: 44px; height: 44px; margin: 0; padding: 0;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--vm-line); border-radius: 50%;
+    background: var(--vm-glass);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    color: var(--vm-fg); opacity: .78;
+    display: grid; place-items: center;
+    cursor: pointer; pointer-events: auto; touch-action: manipulation;
+    transition: opacity .2s ease, border-color .2s ease, color .2s ease, background .2s ease;
+}
+.vm-btn.vm-play, .vm-btn.vm-open { width: 56px; height: 56px; }
+.vm-btn.vm-open { width: 64px; height: 64px; }
+.vm-btn:hover { opacity: 1; color: var(--vm-fg-hi); border-color: rgba(235, 240, 245, .4); }
+.vm-btn:active { background: rgba(235, 240, 245, .10); }
+.vm-btn:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); outline-offset: 4px; opacity: 1; }
+.vm-btn[disabled] { opacity: .25; pointer-events: none; }
+.vm-btn[aria-expanded="true"] { border-color: var(--vm-gold); color: var(--vm-fg-hi); opacity: 1; }
+/* آیکون‌های هم‌خانواده (پخش/مکث، بلندگو/موج/خط) روی هم می‌نشینند، نه زیر هم */
+.vm-btn > .vm-ico { grid-area: 1 / 1; }
+.vm-ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.vm-play .vm-ico, .vm-open .vm-ico { width: 26px; height: 26px; stroke-width: 1.75; }
+.vm-play .i-pause { display: none; }
+.vm-play[aria-pressed="true"] .i-play { display: none; }
+.vm-play[aria-pressed="true"] .i-pause { display: block; }
+.vm-vol[data-muted="1"] .vm-waves { display: none; }
+.vm-vol .vm-slash { display: none; }
+.vm-vol[data-muted="1"] .vm-slash { display: block; }
+
+.vm-open-label {
+    position: absolute; transform: translateX(-50%); white-space: nowrap;
+    font-size: 12px; letter-spacing: .08em; color: var(--vm-fg); opacity: .65;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .8); pointer-events: none;
+}
+
+/* ---- حالت خالی: فقط یک دایره ---- */
+.vm-dock.is-empty .vm-arc,
+.vm-dock.is-empty .vm-seek,
+.vm-dock.is-empty .vm-time,
+.vm-dock.is-empty .vm-clock,
+.vm-dock.is-empty .vm-vol,
+.vm-dock.is-empty .vm-prev,
+.vm-dock.is-empty .vm-play,
+.vm-dock.is-empty .vm-next,
+.vm-dock.is-empty .vm-queue-btn { display: none; }
+.vm-dock:not(.is-empty) .vm-open,
+.vm-dock:not(.is-empty) .vm-open-label { display: none; }
+.vm-root-meta-empty .vm-meta { display: none; }
+
+/* ---- آشکارسازی وقتی موزیک پخش است: کنترل‌ها در خلأ فرو می‌روند، ولی پنهان نمی‌شوند ---- */
+#void-music-root.is-playing .vm-dock { opacity: .72; }
+#void-music-root.is-playing .vm-dock:hover,
+#void-music-root.is-playing .vm-dock:focus-within { opacity: 1; }
+
+/* ---- رها کردنِ فایل ---- */
+#void-music-root.is-drop .vm-open { transform: translate(-50%, -50%) scale(1.12); border-color: var(--vm-gold); opacity: 1; }
+#void-music-root.is-drop .vm-open-label { color: var(--vm-fg-hi); opacity: 1; }
+
+/* ---- پاپ‌اورها ---- */
+.vm-pop {
+    position: absolute; pointer-events: auto;
+    background: rgba(8, 10, 14, .82);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border: 1px solid var(--vm-line); border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+    opacity: 0; visibility: hidden; transform: translateY(6px);
+    transition: opacity .2s ease, transform .2s ease, visibility 0s linear .2s;
+}
+.vm-pop.is-open { opacity: 1; visibility: visible; transform: none; transition: opacity .2s ease, transform .2s ease; }
+.vm-vol-pop { padding: 12px 14px; transform: translate(-50%, 6px); transform-origin: bottom center; }
+.vm-vol-pop.is-open { transform: translate(-50%, 0); }
+.vm-vol-pop input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 120px; height: 28px; margin: 0; background: transparent; cursor: pointer;
+}
+.vm-vol-pop input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: rgba(235, 240, 245, .28); border-radius: 2px; }
+.vm-vol-pop input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; margin-top: -6px; border-radius: 50%;
+    background: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 36, .8); border: 0;
+}
+.vm-vol-pop input[type="range"]:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); outline-offset: 2px; border-radius: 6px; }
+
+.vm-queue-pop { width: min(320px, calc(100vw - 24px)); max-height: min(44vh, 360px); display: flex; flex-direction: column; overflow: hidden; }
+.vm-queue-head { display: flex; gap: 8px; padding: 10px; border-bottom: 1px solid var(--vm-line); }
+.vm-chip {
+    flex: 1; min-height: 36px; padding: 0 10px; border: 1px solid var(--vm-line); border-radius: 999px;
+    background: transparent; color: var(--vm-fg); font: inherit; font-size: 12px; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: border-color .2s ease, color .2s ease;
+}
+.vm-chip:hover { border-color: rgba(235, 240, 245, .4); color: var(--vm-fg-hi); }
+.vm-chip:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); outline-offset: 2px; }
+.vm-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; overscroll-behavior: contain; }
+.vm-list::-webkit-scrollbar { width: 5px; }
+.vm-list::-webkit-scrollbar-thumb { background: rgba(165, 180, 252, .28); border-radius: 999px; }
+.vm-row { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+.vm-row-main {
+    flex: 1; min-width: 0; min-height: 40px; padding: 0 10px; border: 0; background: transparent;
+    color: var(--vm-fg); font: inherit; font-size: 13px; text-align: start; cursor: pointer; border-radius: 10px;
+    display: flex; align-items: center; gap: 10px;
+}
+.vm-row-main span.t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vm-row-main:hover { background: rgba(255, 255, 255, .06); color: var(--vm-fg-hi); }
+.vm-row-main:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); outline-offset: -2px; }
+.vm-row.is-cur .vm-row-main { color: var(--vm-fg-hi); }
+.vm-row .dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: transparent; }
+.vm-row.is-cur .dot { background: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 36, .8); }
+.vm-row.is-bad .t { text-decoration: line-through; opacity: .5; }
+/* آهنگی که فقط اجازهٔ پوشه را می‌خواهد خط‌خورده نمی‌شود: فایل هست، کلیدِ یک کلیک لازم است */
+.vm-row.is-grant .dot { background: var(--vm-rose); box-shadow: 0 0 6px rgba(232, 176, 150, .55); }
+.vm-row.is-grant .vm-row-main { color: var(--vm-fg-hi); text-decoration: underline dotted rgba(232, 176, 150, .55) 2px; text-underline-offset: 3px; }
+.vm-row-x {
+    width: 36px; height: 36px; flex: none; border: 0; border-radius: 50%; background: transparent; color: var(--vm-fg);
+    opacity: .5; cursor: pointer; display: grid; place-items: center;
+}
+.vm-row-x:hover, .vm-row-x:focus-visible { opacity: 1; }
+.vm-row-x:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); }
+.vm-row-x .vm-ico { width: 16px; height: 16px; }
+
+/* ---- پیام کوتاه ---- */
+.vm-toast {
+    position: absolute; left: 50%; transform: translate(-50%, 6px);
+    max-width: min(420px, calc(100vw - 32px)); padding: 8px 14px; border-radius: 999px;
+    background: rgba(8, 10, 14, .85); border: 1px solid var(--vm-line);
+    font-size: 12px; color: var(--vm-fg-hi); text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease;
+}
+.vm-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+.vm-toast.is-actionable { pointer-events: auto; cursor: pointer; }
+.vm-toast.is-actionable:focus-visible { outline: 1px solid rgba(220, 230, 240, .8); outline-offset: 3px; }
+
+/* ---- دکمهٔ بستن (گوشهٔ بالا-راست، همان جای منوی سه‌خطی) ---- */
+.vm-corner {
+    position: fixed; top: max(14px, env(safe-area-inset-top, 0px)); right: 14px; left: auto;
+    display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    transition: opacity .6s ease;
+}
+.vm-btn.vm-cbtn { position: static; transform: none; width: 44px; height: 44px; }
+.vm-fs .i-fsx { display: none; }
+.vm-fs[aria-pressed="true"] .i-fs { display: none; }
+.vm-fs[aria-pressed="true"] .i-fsx { display: block; }
+.vm-widget-btn { opacity: .5; }
+.vm-widget-btn[aria-pressed="true"] { opacity: 1; border-color: var(--vm-gold); color: var(--vm-fg-hi); }
+.vm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+    #void-music-root, .vm-meta, .vm-btn, .vm-pop, .vm-toast, .vm-thumb, .vm-dock { transition: none !important; }
+    /* §CLOCK در این حالت هم مثلِ امروز هیچ محوِ تدریجی نداریم (قاعدهٔ پنجرهٔ ساعت پایینِ همین فایل است) */
+    #void-music-root.is-quiet.vm-clock-live .vm-dock > :not(.vm-clock) { transition: none !important; }
+}
+
+/* ======================================================================
+   فاز ۲: مخفی‌شدنِ خودکار + بومِ ویژولایزر + پودرشدنِ عنوان
+   ====================================================================== */
+#void-music-root.is-quiet .vm-dock,
+#void-music-root.is-quiet .vm-corner { opacity: 0; pointer-events: none; }
+#void-music-root.is-quiet .vm-corner * { pointer-events: none !important; }
+#void-music-root.is-quiet .vm-dock * { pointer-events: none !important; }
+#void-music-root.is-quiet .vm-meta { opacity: 0; }
+/* §CLOCK پنجرهٔ ماندگاریِ ساعت — جفتِ CLOCK_SHOW_MS در void-music.js.
+   ساعت فرزَندِ داک است و فرزند از والدِ opacity:0 فرار نمی‌کند، پس در این پنجره داک پنهان
+   نمی‌شود؛ عوضِ آن هر فرزَندِ غیرساعتی با همان .5s محو می‌شوند و داک روی همان روشناییِ
+   همیشگیِ پخش (.72) می‌ماند تا ساعت نه پرشی‌تر از حالتِ عادی باشد نه کم‌فروغ‌تر.
+   pointer-events همان قاعدهٔ بالا صفر است، پس هیچ کنترلِ پنهان‌شده‌ای قابل کلیک نمی‌شود. */
+#void-music-root.is-quiet.vm-clock-live .vm-dock { opacity: .72; }
+#void-music-root.is-quiet.vm-clock-live .vm-dock > :not(.vm-clock) { opacity: 0; transition: opacity .5s ease; }
+body.vm-quiet, body.vm-quiet * { cursor: none !important; }
+/* عنوان به ذرات تبدیل شده؛ نسخهٔ DOM محو می‌ماند */
+#void-music-root.is-powder .vm-meta { opacity: 0 !important; visibility: hidden; }
+
+.vm-viz { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; display: block; }
+.vm-hud {
+    position: fixed; left: 12px; bottom: 12px; z-index: 5; max-width: calc(100vw - 24px);
+    padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, .55); border: 1px solid rgba(255, 255, 255, .12);
+    font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: rgba(210, 225, 255, .9);
+    white-space: pre; pointer-events: none; direction: ltr; text-align: left;
+}
+.vm-hud[hidden] { display: none; }
+
+
+/* ======================================================================
+   فاز ۳: ابزارکِ شناورِ افزونه + آیکونِ شناورِ پخش/مکث
+   ====================================================================== */
+/* هر چیزی که مستقیم زیرِ <html> (کنارِ head/body) افزوده شده — مثلاً ابزارکِ شناورِ content.js — در Music Mode پنهان است،
+   مگر کاربر با دکمهٔ ابزارک نشانش بدهد (کلاسِ vm-widget) */
+html.vm-on:not(.vm-widget) > *:not(head):not(body):not(script):not(style):not(link):not(meta):not(title) {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity .5s ease, visibility 0s linear .5s !important;
+}
+
+
+
+
+/* ======================================================================
+   ابزارکِ شناورِ افزونه (content.js → #ai-orbit-root) در Music Mode
+   display:none یعنی هیچ visibility/opacity/!importantِ داخلی‌ای نمی‌تواند برش گرداند.
+   دکمهٔ «ابزارک» (کلاسِ vm-widget روی <html>) دوباره نشانش می‌دهد.
+   ====================================================================== */
+html.vm-on:not(.vm-widget) #ai-orbit-root,
+html.vm-on:not(.vm-widget) body #ai-orbit-root,
+html.vm-on:not(.vm-widget) #ai-orbit-root * { display: none !important; }
+/* هر چیزی که جاروبِ جاوااسکریپت پیدا و پنهان کرده (data-vm-swept) */
+html.vm-on:not(.vm-widget) [data-vm-swept] { display: none !important; }
+
+/* چیپِ «نسخهٔ خصوصی» در سرِ صف */
+.vm-queue-head { flex-wrap: wrap; }
+.vm-chip.vm-copy { flex-basis: 100%; }
+.vm-chip[aria-pressed="true"] { border-color: var(--vm-gold); color: var(--vm-fg-hi); }
+
+/* چیپِ منبعِ وب: شناسایی / پخشِ واقعی / اتصالِ صوت / رسیدنِ داده به تحلیل، چهار وضعیتِ جدايند (نه یکی) */
+.vm-web-chip { flex: none; }
+.vm-web-chip.is-live { border-color: var(--vm-gold); color: var(--vm-fg-hi); }
+.vm-web-chip.is-pending { border-color: rgba(251, 191, 36, .45); opacity: .8; }
+.vm-web-chip.is-linked { border-color: rgba(251, 191, 36, .6); border-style: dashed; color: rgba(251, 191, 36, .85); }
+.vm-web-chip.is-failed { border-color: rgba(240, 130, 130, .5); color: rgba(248, 172, 162, .92); }
+.vm-web-chip.is-idle { opacity: .72; }
+
+/* FINAL-WIDGET-RULES
+   ابزارکِ شناورِ افزونه (content.js → #ai-orbit-root) در Music Mode کاملاً پنهان است، مگر کاربر با دکمهٔ ابزارک
+   (کلاسِ vm-widget) نشانش بدهد. فرزندان هم صریحاً پنهان می‌شوند تا visibility:visible داخلی‌شان جلویش را نگیرد. */
+html.vm-on:not(.vm-widget) #ai-orbit-root,
+html.vm-on:not(.vm-widget) #ai-orbit-root * {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+/* آیکونِ پخش/مکث فقط بیرون از Music Mode */
+body.void-music-on > #void-music-mini, body.void-music-on > .vm-mini-wrap { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+
+/* چیپِ «نگه‌داشتن نسخه» در سرِ صف */
+.vm-queue-head { flex-wrap: wrap; }
+.vm-chip.vm-copy { flex-basis: 100%; }
+.vm-chip[aria-pressed="true"] { border-color: var(--vm-gold); color: var(--vm-fg-hi); }
+
+
+
+
+/* ======================================================================
+   Orb شناور (بیرون از Music Mode، وقتی موسیقی بارگذاری/پخش است)
+   دایرهٔ ۶۴px با ویژولایزرِ کوچکِ اختصاصی؛ کلیک = برگشت به Music Mode،
+   نشانِ پخش/مکثِ جدا، کشیدنی و چسبنده به لبه‌های چپ/راست.
+   ====================================================================== */
+.vm-mini-wrap {
+    --orb: 64px;
+    position: fixed; z-index: 900; width: var(--orb); height: var(--orb);
+    left: 16px; top: calc(100vh - var(--orb) - 16px); direction: ltr;
+    opacity: 0; visibility: hidden; transform: scale(.88); pointer-events: none;
+    transition: opacity .35s ease, transform .4s cubic-bezier(.34, 1.56, .64, 1), visibility 0s linear .4s;
+    touch-action: none; -webkit-tap-highlight-color: transparent;
+}
+.vm-mini-wrap.is-on { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition: opacity .35s ease, transform .4s cubic-bezier(.34, 1.56, .64, 1), left .28s ease, top .28s ease; }
+.vm-mini-wrap.is-dragging { transition: none !important; cursor: grabbing; }
+.vm-mini-wrap.is-dragging .vm-mini { cursor: grabbing; }
+@media (max-width: 520px) { .vm-mini-wrap { --orb: 56px; } }
+
+.vm-mini {
+    position: relative; width: 100%; height: 100%; margin: 0; padding: 0; border-radius: 50%;
+    border: 1px solid rgba(235, 240, 245, .22);
+    background: radial-gradient(circle at 50% 50%, #02030a 0 30%, #070b16 100%);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, .55);
+    color: rgba(235, 240, 245, .85); cursor: pointer; overflow: visible;
+    transition: border-color .2s ease, box-shadow .3s ease;
+}
+.vm-mini:hover, .vm-mini:focus-visible { border-color: rgba(235, 240, 245, .5); }
+.vm-mini:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); outline-offset: 4px; }
+.vm-orb-viz { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; pointer-events: none; }
+/* هالهٔ نفس‌کشیدن؛ فقط opacity (ارزان) */
+.vm-mini::after {
+    content: ''; position: absolute; inset: -5px; border-radius: 50%; pointer-events: none; opacity: 0;
+    box-shadow: 0 0 16px 2px rgba(251, 191, 36, .38), 0 0 34px 6px rgba(90, 150, 255, .20);
+}
+.vm-mini-wrap.is-playing .vm-mini::after { animation: vmOrbBreath 2.6s ease-in-out infinite; }
+@keyframes vmOrbBreath { 0%, 100% { opacity: .12; } 50% { opacity: .95; } }
+.vm-mini-ring { position: absolute; inset: -3px; width: calc(100% + 6px); height: calc(100% + 6px); fill: none; pointer-events: none; }
+.vm-mini-track { stroke: rgba(235, 240, 245, .08); stroke-width: 1.2; }
+.vm-mini-prog { stroke: rgba(251, 191, 36, .9); stroke-width: 1.8; stroke-linecap: round; transition: stroke-dashoffset .26s linear; }
+
+.vm-mini-play, .vm-mini-stop {
+    position: absolute; margin: 0; padding: 0; display: grid; place-items: center; border-radius: 50%; cursor: pointer;
+    border: 1px solid rgba(235, 240, 245, .28); background: rgba(8, 10, 14, .82);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: rgba(240, 244, 250, .92);
+    transition: opacity .2s ease, transform .2s ease, border-color .2s ease, color .2s ease, background .2s ease;
+}
+.vm-mini-play { right: -7px; bottom: -7px; width: 26px; height: 26px; }
+.vm-mini-stop { right: -6px; top: -6px; width: 22px; height: 22px; opacity: 0; transform: scale(.8); pointer-events: none; }
+.vm-mini-wrap:hover .vm-mini-stop, .vm-mini-wrap:focus-within .vm-mini-stop { opacity: .9; transform: none; pointer-events: auto; }
+.vm-mini-play::before, .vm-mini-stop::before { content: ''; position: absolute; inset: -9px; border-radius: 50%; }   /* هدفِ لمسیِ بزرگ‌تر */
+.vm-mini-play:hover, .vm-mini-stop:hover, .vm-mini-play:focus-visible, .vm-mini-stop:focus-visible { color: #fff; border-color: rgba(251, 191, 36, .85); opacity: 1; }
+.vm-mini-play:focus-visible, .vm-mini-stop:focus-visible { outline: 2px solid rgba(220, 230, 240, .9); outline-offset: 2px; }
+.vm-mini-play .vm-ico { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.vm-mini-stop .vm-ico { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.vm-mini-play .i-pause { display: none; }
+.vm-mini-play[aria-pressed="true"] .i-play { display: none; }
+.vm-mini-play[aria-pressed="true"] .i-pause { display: block; }
+@media (prefers-reduced-motion: reduce) {
+    .vm-mini-wrap, .vm-mini-wrap.is-on, .vm-mini-prog, .vm-mini-play, .vm-mini-stop { transition: none !important; }
+    .vm-mini-wrap.is-playing .vm-mini::after { animation: none; opacity: .55; }
+}
+
+/* چهارمین دکمهٔ نوارِ بالا-راست: موسیقی؛ هنگامِ پخش چشمک می‌زند.
+   order: در LTR اولین (دورترین از گوشه) و در RTL آخرین (باز هم دورترین از گوشه)، تا سه دکمهٔ قبلی جایشان را حفظ کنند. */
+#ai-ntp-music-btn { order: -2; position: relative; color: rgba(243, 244, 246, .92); }
+html[dir="rtl"] #ai-ntp-music-btn { order: 99; }
+html[dir="rtl"] #ai-ntp-fs-btn { order: -99; }
+#ai-ntp-music-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#ai-ntp-music-btn.is-playing { color: #FBBF24; }
+#ai-ntp-music-btn.is-playing svg { animation: vmQbBlink 1.9s ease-in-out infinite; }
+#ai-ntp-music-btn.is-playing::after {
+    content: ''; position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%;
+    background: #FBBF24; box-shadow: 0 0 7px #FBBF24; animation: vmQbBlink 1.9s ease-in-out infinite;
+}
+@keyframes vmQbBlink { 0%, 100% { opacity: .42; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+    #ai-ntp-music-btn.is-playing svg, #ai-ntp-music-btn.is-playing::after { animation: none; opacity: 1; }
+}
+
+
+/* تمام‌صفحهٔ صفحهٔ اصلی: پنجمین دکمهٔ نوار، کنارِ موسیقی */
+#ai-ntp-fs-btn { order: 99; color: rgba(243, 244, 246, .92); }
+#ai-ntp-fs-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#ai-ntp-fs-btn .fs-out { display: none; }
+#ai-ntp-fs-btn[data-on="1"] .fs-in { display: none; }
+#ai-ntp-fs-btn[data-on="1"] .fs-out { display: block; }
+#ai-ntp-fs-btn[data-on="1"] { color: #FBBF24; }
+
+
+/* ======================================================================
+   نوار بالا-راستِ کامپکت: ♫ · ☰ · اپ‌ها · تمام‌صفحه
+   حساب گوگل به پنلِ اپ‌ها رفت. تمام‌صفحه در «گوشه» است (دسترسیِ آسان: قانونِ Fitts) و دابل‌کلیک روی زمینهٔ خالی هم کار می‌کند.
+   ====================================================================== */
+#ai-ntp-quickbar { padding: 3px; gap: 2px; border-radius: 10px; }
+#ai-ntp-quickbar > button, #ai-ntp-menu-btn, #ai-ntp-apps-btn { width: 30px; height: 30px; border-radius: 7px; font-size: 14px; }
+#ai-ntp-music-btn svg, #ai-ntp-fs-btn svg { width: 16px; height: 16px; }
+#ai-ntp-fs-btn { position: relative; margin-inline-start: 2px; }   /* relative لازم است تا ::before فقط دورِ خودِ دکمه بزرگ شود */
+#ai-ntp-fs-btn::before { content: ''; position: absolute; inset: -4px; }       /* هدفِ کلیکِ بزرگ‌تر از آیکون */
+@media (max-width: 520px) {
+    #ai-ntp-quickbar > button, #ai-ntp-menu-btn, #ai-ntp-apps-btn { width: 32px; height: 32px; }   /* لمسی: کمی بزرگ‌تر */
+}
+
+/* حساب گوگل داخلِ پنلِ اپ‌ها: یک ردیفِ پایینی */
+#ai-ntp-apps-panel #ai-ntp-account {
+    display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+    width: 100%; height: auto; min-height: 40px; box-sizing: border-box;
+    margin: 8px 0 0; padding: 10px 8px 6px; border-top: 1px solid rgba(255, 255, 255, .12); border-radius: 0 0 8px 8px;
+    color: #F3F4F6; font-size: 12px; text-decoration: none; background-color: transparent;
+    background-repeat: no-repeat; background-size: 26px 26px; background-position: 8px center;
+    transform: none; transition: background-color .15s ease;
+}
+#ai-ntp-apps-panel #ai-ntp-account[style*="background-image"] { padding-inline-start: 44px; }
+#ai-ntp-apps-panel #ai-ntp-account:hover { background-color: rgba(255, 255, 255, .07); transform: none; }
+#ai-ntp-apps-panel #ai-ntp-account::after { content: attr(title); opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#ai-ntp-apps-panel #ai-ntp-account img { width: 26px; height: 26px; border-radius: 50%; flex: none; }
+
+
+/* ---- تنظیم صدای کامل: کم ← → زیاد ---- */
+.vm-vol-pop { padding: 10px 14px 12px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.vm-vol-val { text-align: center; font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--vm-fg-hi); font-variant-numeric: tabular-nums; }
+.vm-vol-row { display: flex; align-items: center; gap: 10px; direction: ltr; }
+.vm-vol-row .vm-ico { width: 18px; height: 18px; flex: none; opacity: .75; }
+.vm-vol-lo { opacity: .5 !important; }
+.vm-vol-pop input[type="range"] { width: 150px; }
+.vm-vol-pop input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 4px;
+    background: linear-gradient(to right, #fbbf24 var(--p, 50%), rgba(235, 240, 245, .26) var(--p, 50%));
+}
+.vm-vol-pop input[type="range"]::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -6px; }
+@media (pointer: coarse) { .vm-vol-pop input[type="range"] { width: 180px; height: 36px; } .vm-vol-pop input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -9px; } }
+/* آیکونِ دکمهٔ صدا سطح را نشان می‌دهد: صفر = خط‌خطی، کم = یک موج، بالا = دو موج */
+.vm-vol[data-level="1"] .vm-waves path:nth-child(2) { display: none; }
