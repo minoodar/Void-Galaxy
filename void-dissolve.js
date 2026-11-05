@@ -1507,6 +1507,23 @@
   // خودِ ردیفِ لینک‌های پرکاربرد (که async است و ارتفاعش می‌تواند بعد از
   // تشکیلِ اولیهٔ صورتِ فلکی عوض شود) — همین یک تابع صدا زده می‌شود.
   function repositionForLayoutChange() {
+    /* Panel heads can move when Today changes side/height, Echo or Goals
+       expands, or the window crosses a responsive breakpoint. Keep every
+       dissolved marker tied to its live panel center, not its old viewport
+       coordinates; otherwise the dots overlap after a resize. */
+    if (!sky) {
+      PRIMARY_IDS.forEach((id) => {
+        const entry = registry[id];
+        if (!entry || !entry.singularity || !entry.el || entry.el.hidden) return;
+        const rect = entry.el.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        entry.anchor = entry.anchor || {};
+        entry.anchor.x = rect.left + rect.width / 2;
+        entry.anchor.y = rect.top + rect.height / 2;
+        if (entry.anchor.preferredX == null) entry.anchor.preferredX = entry.anchor.x;
+        if (entry.anchor.preferredY == null) entry.anchor.preferredY = entry.anchor.y;
+      });
+    }
     if (sky && countDissolvedPrimaries() >= 3) {
       layoutSky();
       renderSky(performance.now());
@@ -1538,6 +1555,23 @@
       repositionForLayoutChange();
     }, 120);
   }, { passive: true });
+
+  /* A resized dock, a collapsed/expanded Echo or Goals panel, and the
+     mobile Stage scroll all alter the anchors without necessarily firing a
+     window resize or changing the frequent-links row. Observe the actual
+     primary panels so all three markers stay in sync in every mode. */
+  try {
+    const layoutObserver = new ResizeObserver(() => {
+      requestAnimationFrame(repositionForLayoutChange);
+    });
+    ['ai-void-todo-dock', 'ai-void-echo', 'ai-void-agenda-goals-section', 'ai-void-stage']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) layoutObserver.observe(el);
+      });
+  } catch (e) {}
+
+  window.addEventListener('void-panel-layout-changed', repositionForLayoutChange, { passive: true });
 
   // موبایل: از وقتی #ai-void-stage به‌جای یک چیدمانِ ثابت، یک ستونِ
   // اسکرول‌شونده شده (زیرِ ۹۴۰px)، اگه کاربر بعد از تشکیلِ صورتِ فلکی
