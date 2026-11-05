@@ -79,6 +79,8 @@
   }
 
   let todos = [];
+  let todosLoaded = false;
+  let todosRenderedOnce = false;
   let timeEvents = [];
   let userBirthYear = null;
   let userBirthMonth = null;
@@ -833,13 +835,15 @@ if (typeof repositionForLayoutChange === 'function') {
   function acceptTodos(next, allowEmpty) {
     if (!Array.isArray(next)) return;
     if (!allowEmpty && next.length === 0 && todos.length > 0) return;
+    todosLoaded = true;
     const sig = function (arr) {
       return (arr || []).map(function (t) {
         if (!t) return '';
         return [t.id || '', t.text || '', t.done ? '1' : '0', t.type || 'daily', String(t.createdAt || ''), String(typeof t.progress === 'number' ? t.progress : '')].join('\x1f');
       }).join('\x1e');
     };
-    if (sig(next) === sig(todos)) return;
+    if (todosRenderedOnce && sig(next) === sig(todos)) return;
+    todosRenderedOnce = true;
     todos = next.slice();
     renderTodos();
   }
@@ -1259,6 +1263,18 @@ if (typeof repositionForLayoutChange === 'function') {
       if (goalsTitleEl) goalsTitleEl.textContent = label('todoTabGoals', 'Goals');
       hasGoals = goals.length > 0;
       if (!hasGoals) {
+        // The empty state advertises that Goals exists, so keep its shell
+        // visible until the user has at least one goal to act on.
+        const shouldRestoreGoalsVisibility = !goalsVisible;
+        goalsVisible = true;
+        try {
+          if (shouldRestoreGoalsVisibility) chrome.storage.local.set({ voidGoalsVisible: true });
+        } catch (e) {}
+        try {
+          if (window.VoidDissolve && VoidDissolve.isDissolved('goals')) {
+            VoidDissolve.restore('goals');
+          }
+        } catch (e) {}
         goalsList.innerHTML = '';
         const emptyGoals = document.createElement('div');
         emptyGoals.className = 'ai-void-todo-empty';
@@ -1341,6 +1357,17 @@ if (typeof repositionForLayoutChange === 'function') {
   // می‌کنه)، الان با دادهٔ درست تصحیح بشه — این تنها جاییه که بعد از اولین
   // رندر، دوباره دست به دید بودن/نبودنِ Today می‌زنیم.
   window.addEventListener('void-dissolve-ready', function () {
+    // Saved star state is applied asynchronously after the first todo render.
+    // If that render is empty, restore Goals after the saved state is hydrated.
+    if (todosLoaded && !hasGoals) {
+      goalsVisible = true;
+      try { chrome.storage.local.set({ voidGoalsVisible: true }); } catch (e) {}
+      try {
+        if (window.VoidDissolve && VoidDissolve.isDissolved('goals')) {
+          VoidDissolve.restore('goals');
+        }
+      } catch (e) {}
+    }
     applyDockVisibility();
   }, { once: true });
   if (Array.isArray(window.__aiTreeTodosForVoid) && window.__aiTreeTodosForVoid.length) {
@@ -1357,7 +1384,9 @@ if (typeof repositionForLayoutChange === 'function') {
         if (typeof localData.voidTodoCollapsed === 'boolean') collapsed = localData.voidTodoCollapsed;
         if (typeof localData[VISIBLE_KEY] === 'boolean') dockVisible = localData[VISIBLE_KEY];
         if (typeof localData.voidGoalsVisible === 'boolean') goalsVisible = localData.voidGoalsVisible;
-        else goalsVisible = dockVisible;
+        // Goals is an independent panel; an unset legacy preference must not
+        // inherit Today's visibility (which can hide the empty-state shell).
+        else goalsVisible = true;
         applyPosition();
         applyCollapsed();
         applyDockVisibility();
