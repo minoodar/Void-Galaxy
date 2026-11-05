@@ -96,8 +96,16 @@
     // حساسیت: انرژیِ نرمال‌شده (۰..۱) نسبت به بازهٔ پویاییِ همین آهنگ؛ sens بزرگ‌تر = زودتر و بیشتر. با HUD (Shift+D) تنظیم کن
     sens: 1.15, enterE: 0.46, enterFluxE: 0.34, enterFluxR: 1.45, exitE: 0.26,
     minGalaxyS: 1.2, exitHoldS: 1.4, enterHoldS: 0.18, cooldownS: 0.6, holeRest: 0.20, holeBase: 0.30,
-    powderMinS: 8.0      // پودرِ عنوان: حداقل ۸ ثانیه، و هرگز کمتر از ۱/۲۰ طولِ آهنگ
+    powderMinS: 8.0,     // پودرِ عنوان: حداقل ۸ ثانیه، و هرگز کمتر از ۱/۲۰ طولِ آهنگ
+    // §ARTWORK جلدِ آلبوم داخلِ کرهٔ سیاه؛ پنجره‌های ۵ثانیه‌ایِ آغاز/پایان را خودِ پلیر می‌فرستد.
+    // artwork:false ⇒ دقیقاً رفتارِ امروز.
+    artwork: true
   };
+  // پوششِ زمانیِ هر فراخوانی: ۰٫۷۵ محوِ ورود + ۳٫۵ نگه‌داشت + ۰٫۷۵ محوِ خروج = ۵ ثانیه
+  // (هم‌خانوادهٔ پودرِ ورود/خروجِ عنوان). پلیر همین را در ۵ ثانیهٔ اول و ۵ ثانیهٔ آخر آهنگ صدا می‌زند.
+  // size سقفِ بافت است (مربع، با برشِ مرکزیِ تصویر)؛ dim جلد را کمی به تاریکیِ صحنه نزدیک می‌کند.
+  const ART = { inS: 0.75, holdS: 3.5, outS: 0.75, size: 512, dim: 0.94 };
+  const ART_SPLIT = { halfW: 1, hard: false };   // §ARTWORK ترتیبِ دوپاس هنگامِ نمایشِ جلد (نیمهٔ نزدیک روی تصویر)
   const BREATH = {
     cyclesPerTrack: 2, minCycleS: 24, maxCycleS: 180, fallbackTrackS: 180, rollFadeS: 18,
     startPitch: 10, endPitch: 80, startZoom: 0.86, endZoom: 1.0, startRoll: 0.35, maxPitch: 88
@@ -1481,6 +1489,9 @@
     },
     session: (crypto.getRandomValues(new Uint32Array(1))[0] || 1),
     powder: { on: false, appear: 0, prog: 0, key: '', n: 0, buf: null, vao: null, box: [0, 1] },
+    // §ARTWORK جلدِ آلبوم: on حلقه را زنده نگه می‌دارد (حتی روی فریمِ فریزشده)، amt وزنِ پوشش،
+    // startedAt لحظهٔ آماده‌شدنِ بافت است و gen بارگذاری‌های کهنه را بی‌اثر می‌کند.
+    art: { on: false, amt: 0, startedAt: 0, src: '', gen: 0, tex: null, ready: false },
     entrance: { pending: false, active: false, elapsed: 0, duration: 1.02, handoff: 0.28, generation: 0, id: null },
     hud: null, hudOn: false, hudT: 0, frames: 0, fps: 0, fpsT: 0, tint: [1, 0.9, 0.7], retimeT: 0
   };
@@ -2075,6 +2086,7 @@ void main(){
 precision highp float;
 uniform vec2 uCanvas; uniform float uPx; uniform vec2 uCenter; uniform float uScale, uHoleR, uLevel, uLum;
 uniform float uTime, uEnergy, uBass, uFlare, uAxis; uniform vec3 uTint;
+uniform sampler2D uArt; uniform float uArtAmt, uArtDim;   // §ARTWORK جلدِ آلبوم داخلِ کره
 out vec4 o;
 float haloHash(float x){ return fract(sin(x * 127.1 + 311.7) * 43758.5453); }
 float haloNoise(float a){
@@ -2113,6 +2125,14 @@ void main(){
   float I = (ring + halo) * flow * dop * breathe + flare;
   vec3 col = rim * I * (0.35 + 0.65 * smoothstep(0.0, 0.5, uLevel)) * (0.65 + 0.35 * uLum) * 0.78;
   col *= 1.0 - body;
+  // §ARTWORK جلدِ آلبوم همیشه «داخلِ همین دایره» است، نه یک کادرِ مربع روی صفحه: تصویر با
+  // فاصلهٔ نرمال‌شده از مرکز (d) تا لبه با smoothstep در سیاهیِ کره محو می‌شود. آلفا همان body
+  // می‌ماند، پس نیمهٔ دورِ ذرات پیش‌تر پاک شده و ذراتِ نیمهٔ نزدیک بعد از این پاس روی تصویر می‌نشینند.
+  // در حالتِ کم‌نور (uLevel≈۰) هم خودِ تصویر دایره را زنده نگه می‌دارد: body با artMask بالا می‌آید.
+  float artMask = (1.0 - smoothstep(0.70, 1.0, d)) * uArtAmt;
+  vec3 art = texture(uArt, p / R * 0.5 + 0.5).rgb * uArtDim;
+  col = mix(col, art, artMask);
+  body = max(body, artMask);
   o = vec4(col, body);
 }`;
 
@@ -2414,7 +2434,7 @@ void main(){
       G.cosmic = program(gl, VS_COSMIC_DOTS, FS_COSMIC_DOTS, ['uView', 'uPx', 'uTime', 'uLevel', 'uGlow', 'uAspect', 'uPrimary', 'uReveal[0]', 'uBandTex', 'uBandAmt', 'uBandHigh']);
       G.dots = program(gl, VS_DOTS, FS_OCCLUDED_DOTS, ['uView', 'uCenter', 'uScale', 'uSin', 'uTilt', 'uPx', 'uHalf', 'uDiskBreath', 'uHoleR', 'uPhase', 'uReveal', 'uLum', 'uTime', 'uPulseR', 'uPulseA', 'uDim', 'uMid', 'uHigh', 'uStructure', 'uChroma', 'uPal', 'uAur', 'uAurMix', 'uTint', 'uDive', 'uTravel', 'uCull', 'uOccl']);
       G.aurDots = program(gl, VS_AUR_DOTS, FS_AUR_DOTS, ['uView', 'uCenter', 'uScale', 'uSin', 'uTilt', 'uPx', 'uHalf', 'uDiskBreath', 'uPhase', 'uTime', 'uLevel', 'uLum', 'uLow', 'uMid', 'uHigh', 'uDim', 'uChroma', 'uHoleR', 'uTint']);
-      G.hor = program(gl, VS_TRI, FS_HORIZON, ['uCanvas', 'uPx', 'uCenter', 'uScale', 'uHoleR', 'uLevel', 'uLum', 'uTime', 'uEnergy', 'uBass', 'uFlare', 'uAxis', 'uTint']);
+      G.hor = program(gl, VS_TRI, FS_HORIZON, ['uCanvas', 'uPx', 'uCenter', 'uScale', 'uHoleR', 'uLevel', 'uLum', 'uTime', 'uEnergy', 'uBass', 'uFlare', 'uAxis', 'uTint', 'uArt', 'uArtAmt', 'uArtDim']);
     } catch (e) { teardownGL(); V.dead = true; return false; }
     // §ENCHANT برنامهٔ شیدرِ هاله در try جدا: اگر روی یک GPU کامپایل نشد، فقط همین افکت خاموش می‌شود
     try { G.ench = !CFG.enchant ? null : program(V.gl, VS_TRI, FS_ENCHANT, ['uCanvas', 'uPx', 'uCenter', 'uScale', 'uHoleR', 'uTime', 'uFlow', 'uAura', 'uSwell', 'uSqueeze', 'uR1', 'uA1', 'uR2', 'uA2']); } catch (e) { G.ench = null; }
@@ -2469,6 +2489,16 @@ void main(){
       gl.bindVertexArray(null);
 
       G.tex = gl.createTexture(); G.fbo = gl.createFramebuffer();
+      // §ARTWORK بافتِ جایگزینِ ۱×۱ تا یونیفرمِ uArt هرگز بی‌بافت نماند
+      G.artTex = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, G.artTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.activeTexture(gl.TEXTURE0);
       V.ok = true;
       syncQualityMode();
       resizeGL();
@@ -2516,6 +2546,8 @@ void main(){
     try { if (V.canvas && V.canvas.parentNode) V.canvas.parentNode.removeChild(V.canvas); } catch (e) {}
     V.canvas = null; V.gl = null; V.ok = false; G = null;
     V.powder.buf = null; V.powder.vao = null; V.powder.n = 0; V.powder.key = '';
+    // §ARTWORK بافت به contextِ رفته تعلق دارد: دسته دور ریخته می‌شود و بارگذاری‌های در راه با gen بی‌اثر می‌شوند
+    const a = V.art; a.on = false; a.amt = 0; a.startedAt = 0; a.src = ''; a.gen++; a.tex = null; a.ready = false;
   }
 
   /* ---------- پودرِ عنوان ---------- */
@@ -2699,6 +2731,9 @@ void main(){
   const CM = { N: 34, MAXC: 12, buf: null, px: null, py: null, ds: [], dc: [], POL: [0, 0], xy: [0, 0] };
   CM.buf = new Float32Array(CM.MAXC * (2 * CM.N + 4) * 9); CM.px = new Float32Array(CM.N); CM.py = new Float32Array(CM.N);
   const STAR_RGB = [1.0, 0.92, 0.74];
+  // §STAR-GAP سقفِ فاصلهٔ زمانیِ رها شدنِ اولین تا آخرین ستاره (ثانیه). برای ≤۳ ستاره دقیقاً همان ۰٫۹۵ ثانیهٔ قبلی است؛
+  // برای ۴ و ۵ ستاره فاصله‌ها فشرده می‌شود تا ستارهٔ آخر هم‌زمانِ رهاشدنِ ستارهٔ سوم در حالتِ ۳ ستاره‌ای برود (همان که دیده می‌شود).
+  const STAR_LAUNCH_SPAN_S = 1.9;
   function cometPolar(m, q) {
     const P = CM.POL;
     if (m.kind === 'ring') {
@@ -2753,8 +2788,9 @@ void main(){
     const c = V.cosmic; if (!c.sessionActive) beginCosmicSession();
     cancelStarFlight();
     const t0 = c.activeElapsed;
+    const starGap = Math.min(0.95, STAR_LAUNCH_SPAN_S / Math.max(1, rects.length - 1));   // §STAR-GAP
     for (let k = 0; k < rects.length && COMETS.length < CM.MAXC; k++) {
-      COMETS.push({ kind: 'star', k: k, idx: -1, born: t0 + 0.12 + k * 0.95, dur: 3.7 + cosmicRand() * 0.5, sx: rects[k].x, sy: rects[k].y, ready: false, gone: false,
+      COMETS.push({ kind: 'star', k: k, idx: -1, born: t0 + 0.12 + k * starGap, dur: 3.7 + cosmicRand() * 0.5, sx: rects[k].x, sy: rects[k].y, ready: false, gone: false,
         tail: 0.30, str: 0.8, th0: 0, dir: 1, turns: 1.1, r0: 0.4, rEnd: HOLE_R * 0.85, bulge: 0.25 });
     }
   }
@@ -3110,6 +3146,95 @@ void main(){
     return { halfW: clamp(1 - (d - (at - soft)) / (2 * soft), 0, 1), hard: d >= at + soft };
   }
 
+  /* ---------- §ARTWORK جلدِ آلبوم در کرهٔ سیاه ----------
+     تصویر در بافتِ کوچکِ مربعی (برشِ مرکزی) می‌نشیند و شیدرِ افق آن را داخلِ همان دایره با
+     لبهٔ محو نشان می‌دهد. هیچ گرهٔ DOM و هیچ پاسِ تازه‌ای اضافه نمی‌شود: همان یک مثلثِ افق.
+     بارگذاری ناکام (مثلاً تصویرِ بی‌CORS) بی‌صدا رد می‌شود و صحنه دقیقاً مثلِ امروز می‌ماند. */
+  function artStep(nowS) {
+    const a = V.art;
+    if (!a.on) { a.amt = 0; return; }
+    if (!a.startedAt) { a.amt = 0; return; }
+    const t = nowS - a.startedAt, holdAt = ART.inS + ART.holdS;
+    if (t < ART.inS) a.amt = smoother5(t / ART.inS);
+    else if (t < holdAt) a.amt = 1;
+    else if (t < holdAt + ART.outS) a.amt = 1 - smoother5((t - holdAt) / ART.outS);
+    else { a.amt = 0; a.on = false; }
+  }
+  function uploadArtTexture(img) {
+    const gl = V.gl;
+    if (!gl || !V.ok) return false;
+    const iw = img.naturalWidth || img.width || 0, ih = img.naturalHeight || img.height || 0;
+    if (!iw || !ih) return false;
+    const size = Math.max(2, Math.round(ART.size));
+    let src = img;
+    try {
+      const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+      const g2 = cv.getContext('2d');
+      const k = Math.min(iw, ih);                       // برشِ مرکزی: بدونِ کشیدگی، بعد دایره‌ای بریده می‌شود
+      g2.drawImage(img, (iw - k) / 2, (ih - k) / 2, k, k, 0, 0, size, size);
+      src = cv;
+    } catch (e) { return false; }
+    const tex = V.art.tex || gl.createTexture();
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    let okTex = true;
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src); } catch (e) { okTex = false; }
+    if (okTex) {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      V.art.tex = tex;
+    }
+    gl.activeTexture(gl.TEXTURE0);
+    return okTex;
+  }
+  function loadArtTexture(src, gen) {
+    const a = V.art;
+    const img = new Image();
+    if (/^https?:/i.test(src)) img.crossOrigin = 'anonymous';   // بافتِ WebGL بی‌CORS مسموم می‌شود
+    img.decoding = 'async';
+    const fail = function () {
+      if (gen !== a.gen) return;
+      a.ready = false;
+      if (!a.tex) a.on = false;                        // بافتِ قبلی هست؟ همان تا پایانِ پوشش می‌ماند
+    };
+    img.onload = guard(function () {
+      if (gen !== a.gen || !V.ok) return;
+      if (!uploadArtTexture(img)) { fail(); return; }
+      a.ready = true;
+      if (!a.startedAt) a.startedAt = performance.now() / 1000;
+      if (!V.running) startLoop();
+    }, 'art:img-load');
+    img.onerror = fail;
+    setTimeout(guard(function () { if (gen === a.gen && !a.ready) fail(); }, 'to:art-load-4s'), 4000);
+    img.src = src;
+  }
+  /* replace=۱: همین آهنگ جلدِ کامل‌تری فرستاده (ID3 پس از جلدِ موقت) ⇒ پوشش از نو شروع نمی‌شود.
+     restart=۱: کاربر خودش روی جلد زد ⇒ همان تصویر (و همان بافت) از نو نمایش داده می‌شود. */
+  function setArtwork(src, opts) {
+    opts = opts || {};
+    if (!CFG.artwork) return false;
+    if (typeof src !== 'string' || !src) return false;
+    if (document.hidden || !VM.isOpen()) return false;
+    const a = V.art, same = a.src === src;
+    if (same && a.on && !opts.restart && opts.replace !== false) return true;
+    if (!V.ok && !initGL()) return false;
+    if (same && a.ready && opts.restart) {                  // همان بافت: بدونِ بارگذاریِ دوباره
+      a.on = true; a.startedAt = performance.now() / 1000; a.amt = 0;
+      if (!V.running) startLoop();
+      return true;
+    }
+    a.src = src; a.gen = (a.gen | 0) + 1;
+    // §ARTWORK آهنگِ تازه (replace=false) پنجرهٔ خودش را از صفر شروع می‌کند، نه باقی‌ماندهٔ آهنگِ قبلی
+    if (opts.restart || !opts.replace || !a.on || !a.startedAt) { a.amt = 0; a.startedAt = 0; }
+    a.on = true;
+    if (!V.running) startLoop();
+    loadArtTexture(src, a.gen);
+    return true;
+  }
+
   /* ---------- رسم ---------- */
   function draw(nowS) {
     const gl = V.gl;
@@ -3129,8 +3254,12 @@ void main(){
     V.revealT = nowS;
     V.revealK = clamp((V.revealK || 0) + (tunnelMode ? 1 : -1) * revDt / REVEAL_RAMP_S, 0, 1);
     const revealForce = smoother5(V.revealK);
+    // §ARTWORK پوششِ جلد اول حساب می‌شود، چون ترتیبِ پاس‌های ذرات در ثانیه‌های جلد عوض می‌شود.
+    artStep(nowS);
     // §B ترتیبِ رسمِ افق دیگر با همین یک بولین عوض نمی‌شود؛ آستانهٔ نرمِ splitAt جای آن را گرفته.
-    const sw = splitWeights(dive);
+    // §ARTWORK در حالتِ جلد همیشه دوپاس می‌کنیم تا نیمهٔ نزدیک بعد از افق بیاید و روی تصویر بنشیند؛
+    // بدونِ جلد همان splitWeightsِ دست‌نخورده برمی‌گردد (هیچ فریمی از مسیرِ امروز عوض نمی‌شود).
+    const sw = V.art.amt > 0.0005 ? ART_SPLIT : splitWeights(dive);
     const LaAir = La * air;
     // §IDLE وزنِ حالتِ «صدا بدونِ موسیقی» (از همان blend در step خوانده می‌شود، نه رأیِ تازه):
     // با idleW=0 همهٔ عبارتهای پایین دقیقاً همان اعدادِ امروزند.
@@ -3216,7 +3345,9 @@ void main(){
        هیچ پاسِ نقطه‌ای (dots/aurDots) دیگر اجرا نمی‌شود. آستانه‌ها دست‌نخورده‌اند. */
     const dotsOn = Lg > 0.004;
     const haloOn = idleW > 0.0005;
-    if (dotsOn || haloOn) {
+    // §ARTWORK جلد حتی وقتی کهکشان در کم‌نورترین حالت است هم باید دیده شود
+    const artOn = V.art.amt > 0.0005;
+    if (dotsOn || haloOn || artOn) {
       const u = G.dots.u, n = Math.max(1500, Math.floor(V.N * V.q));
       const au = G.aurDots.u, aurN = Math.floor(V.auroraN * V.q);
       const pp = clamp((nowS - V.pulse.t0) / 1.7, 0, 1);
@@ -3264,6 +3395,12 @@ void main(){
         gl.uniform1f(h.uTime, V.haloT); gl.uniform1f(h.uEnergy, energy === undefined ? (V.energy || 0) : energy);
         gl.uniform1f(h.uBass, bass === undefined ? (rm ? 0 : FEAT.bass) : bass); gl.uniform1f(h.uFlare, flare);
         gl.uniform1f(h.uAxis, roll + V.haloT * 0.05); gl.uniform3f(h.uTint, V.tintC[0], V.tintC[1], V.tintC[2]);
+        // §ARTWORK واحدِ ۱ مخصوصِ جلد است تا بافتِ شفق (واحدِ ۰) دست‌نخورده بماند
+        const artAmt = (V.art.on && V.art.tex) ? clamp(V.art.amt, 0, 1) : 0;
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, artAmt > 0 ? V.art.tex : G.artTex);
+        gl.uniform1i(h.uArt, 1); gl.uniform1f(h.uArtAmt, artAmt); gl.uniform1f(h.uArtDim, ART.dim);
+        gl.activeTexture(gl.TEXTURE0);
         // افق فقط چند شعاع حولِ سیاه‌چاله محتوا دارد؛ scissor همان ناحیه را رسم می‌کند، نه کلِ صفحه.
         const radDev = (holeR * sceneScale * 4.5 + 6) * V.rs;
         const cxd = V.cx * V.rs, cyd = V.H - V.cy * V.rs;
@@ -3399,7 +3536,7 @@ void main(){
     /* §SCENE: درِ فریز باید صحنه را هم ببیند، وگرنه در لحظهٔ رفتنِ پخش (idleX هنوز صفر و
        Lg روی holeRest) حلقه می‌ایستد و یک فریمِ مرده جای نفسِ آهستهٔ هاله را می‌گیرد. */
     const sceneOn = sceneWanted();
-    if (!V.playing && settledCalm && !(CFG.idleHalo && V.idleAudio) && !sceneOn) {
+    if (!V.playing && settledCalm && !(CFG.idleHalo && V.idleAudio) && !sceneOn && !V.art.on) {
       stopLoop(false);                                           // آخرین فریم (سیاه‌چاله‌ی کم‌نور) روی صفحه می‌ماند؛ دیگر هیچ پردازشی نیست
       try { const au = VM.getAudio(); if (A.ok && A.ctx.state === 'running' && au && !playSignal(au) && suspendAllowed(au)) A.ctx.suspend(); } catch (e) {}
       if (V.hudOn) updateHud(now);
@@ -3767,6 +3904,17 @@ void main(){
       return true;
     },
     enchantState: function () { return { starts: ENCH.starts, why: ENCH.why, introOn: ENCH.intro.on, introT: Math.round(ENCH.intro.t * 100) / 100, idleX: Math.round(V.idleX * 100) / 100, shader: !!(G && G.ench) }; },
+    // §ARTWORK نمایشِ جلدِ آلبوم داخلِ کرهٔ سیاه (۵ ثانیه هر بار). بدونِ منبعِ تصویر یا بی‌CORS: بی‌اثر.
+    artwork: function (src, opts) { return setArtwork(src, opts); },
+    artworkState: function () { const a = V.art; return { on: a.on, amt: Math.round(a.amt * 1000) / 1000, ready: a.ready, hasTexture: !!a.tex, src: a.src }; },
+    // §ARTWORK آزمونِ نقطهٔ صفحه (CSS px) روی همان دایره‌ای که جلد در آن می‌نشیند؛ پلیر با هاور روی
+    // این ناحیه جلد را دوباره می‌آورد. pad هدف را کمی بزرگ‌تر می‌کند تا لبهٔ محو هم بگیرد.
+    holeHit: function (x, y, pad) {
+      if (!V.ok || !V.vw || !VM.isOpen()) return false;
+      const r = HOLE_R * (V.scale || 0) + (pad > 0 ? pad : 0);
+      const dx = x - V.cx, dy = y - V.cy;
+      return dx * dx + dy * dy <= r * r;
+    },
     getStage: function () { return V.stage; },
     debugState: function () {
       const a = VM.getAudio();

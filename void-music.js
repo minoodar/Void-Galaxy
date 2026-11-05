@@ -44,7 +44,8 @@
     voidMusicPlaybackCheckFailed: 'Could not verify playback in other tabs. Please try again.',
     voidMusicRetry: 'Retry',
     voidMusicFullscreen: 'Full screen', voidMusicExitFullscreen: 'Exit full screen',
-    voidMusicShowWidget: 'Show extension widget', voidMusicHideWidget: 'Hide extension widget'
+    voidMusicShowWidget: 'Show extension widget', voidMusicHideWidget: 'Hide extension widget',
+    voidMusicCoverHint: 'Show album art in the galaxy'
   };
   // پیش‌فرض انگلیسیِ کلیدهای جستجو/شافل (ترجمهٔ ۱۲ زبانه در i18n.js است)
   EN.voidMusicSearch = 'Search tracks'; EN.voidMusicSearchClear = 'Clear search'; EN.voidMusicNoResults = 'No matching tracks';
@@ -737,7 +738,7 @@
       if (m.cover) { cu = URL.createObjectURL(m.cover); }
       if (S.coverUrl) { try { URL.revokeObjectURL(S.coverUrl); } catch (e) {} }
       S.coverUrl = cu;
-      setMeta(tr.title, tr.artist, cu, function () {
+      setMeta(tr.title, tr.artist, cu || cosmicCover(tr.title, tr.name || ''), function () {
         if (!playbackStarted || tok !== S.token || S.curId !== id || a.paused) return;
         try { window.dispatchEvent(new CustomEvent('voidmusic:title-ready', { detail: { id: id, title: tr.title, artist: tr.artist, seed: S.seed, generation: tok } })); } catch (e) {}
       });
@@ -913,12 +914,17 @@
 
     // عنوان + جلد
     els.meta = el('div', 'vm-meta is-blank');
-    els.cover = el('img', 'vm-cover', { alt: '', hidden: '', draggable: 'false' });
     const tx = el('div', 'vm-text');
     els.title = el('div', 'vm-title', { dir: 'auto', 'aria-live': 'polite' });
     els.artist = el('div', 'vm-artist', { dir: 'auto' });
     tx.append(els.title, els.artist);
-    els.meta.append(els.cover, tx);
+    els.meta.append(tx);
+    els.title.addEventListener('click', function () { replayArtwork(); });
+    els.title.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); replayArtwork(); }
+    });
+    window.addEventListener('pointermove', artHoverCheck, { passive: true });
+    window.addEventListener('pointercancel', artHoverReset, { passive: true });
 
     dock = el('div', 'vm-dock is-empty');
     // کمان + تیک‌ها
@@ -1175,14 +1181,55 @@
   }
 
   /* ---- هم‌گام‌سازی نمایش ---- */
+  const ART_WIN_S = 5;
+  let artSrc = null;
+  let artTrackId = null;
+  let artEndTok = -1;
+  function flashArtwork(url, restart) {
+    const viz = window.VoidMusicViz;
+    if (!viz || typeof viz.artwork !== 'function' || typeof url !== 'string' || !url) return;
+    const same = !restart && !!S.curId && artTrackId === S.curId;
+    artTrackId = S.curId;
+    viz.artwork(url, { replace: same, restart: !!restart });
+  }
+  function replayArtwork() { if (artSrc) flashArtwork(artSrc, true); }
+  function setTitleArt(on, title) {
+    if (!els.title) return;
+    els.meta.classList.toggle('is-art', !!on);
+    if (!on) { els.title.removeAttribute('role'); els.title.removeAttribute('tabindex'); els.title.removeAttribute('title'); return; }
+    const hint = L('voidMusicCoverHint');
+    els.title.setAttribute('role', 'button');
+    els.title.tabIndex = 0;
+    els.title.title = hint;
+    els.title.setAttribute('aria-label', (title ? title + ' \u2014 ' : '') + hint);
+  }
+  let artHover = false;
+  function artHoverReset() { artHover = false; }
+  function artHoverCheck(e) {
+    const viz = window.VoidMusicViz;
+    if (!artSrc || !viz || typeof viz.holeHit !== 'function') { artHover = false; return; }
+    const over = viz.holeHit(e.clientX, e.clientY, 12);
+    if (over === artHover) return;
+    artHover = over;
+    if (!over) return;
+    const st = typeof viz.artworkState === 'function' ? viz.artworkState() : null;
+    if (!st || !st.on) flashArtwork(artSrc, true);
+  }
+  function cosmicCover(title, key) {
+    try {
+      const cosmic = window.VoidArtwork && window.VoidArtwork.cosmic;
+      return typeof cosmic === 'function' ? cosmic(title, key) : null;
+    } catch (e) { return null; }
+  }
   let metaTimer = 0;
   function setMeta(title, artist, coverUrl, onApplied) {
     const apply = function () {
       els.title.textContent = title || '';
       els.artist.textContent = artist || '';
       renderStars();
-      if (coverUrl) { els.cover.src = coverUrl; els.cover.hidden = false; }
-      else { els.cover.removeAttribute('src'); els.cover.hidden = true; }
+      artSrc = coverUrl || null;
+      setTitleArt(!!artSrc, title);
+      if (artSrc) flashArtwork(artSrc);
       els.meta.classList.toggle('is-blank', !title);
       els.meta.classList.remove('is-out');
       if (title) document.title = '\u266A ' + title;
@@ -1229,6 +1276,10 @@
     els.seek.setAttribute('aria-valuemax', String(Math.round(dur)));
     els.seek.setAttribute('aria-valuenow', String(Math.round(cur)));
     els.seek.setAttribute('aria-valuetext', fmt(cur) + ' / ' + fmt(dur));
+    if (a && !a.paused && artSrc && S.token !== artEndTok && cur > 0 && dur > ART_WIN_S * 2 && dur - cur <= ART_WIN_S) {
+      artEndTok = S.token;
+      flashArtwork(artSrc, true);
+    }
     if (S.mini && !S.open) syncMini();
   }
 
