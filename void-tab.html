@@ -35,7 +35,6 @@
   height: 58px;
   min-height: 58px;
 }
-<style>
     * { box-sizing: border-box; }
 
     /* --void-dock-w یک‌بار تعریف می‌شود و در دو جا مصرف می‌شود: عرضِ خودِ
@@ -178,13 +177,22 @@
         position: fixed;
         left: 0; right: 0; margin: 0 auto;
         top: max(88px, 18vh);
+        max-height: calc(100dvh - max(88px, 18vh) - 16px);
         z-index: 40;
         width: min(640px, calc(100vw - 2 * (var(--void-dock-offset) + var(--void-dock-w) + var(--void-dock-gap))));
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 18px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(165, 180, 252, .3) transparent;
         pointer-events: none;
+    }
+    @supports not (height: 100dvh) {
+        #ai-void-stage { max-height: calc(100vh - max(88px, 18vh) - 16px); }
     }
     #ai-void-stage > * { pointer-events: auto; }
 
@@ -2070,10 +2078,13 @@
            نمی‌تونه روی چیزِ دیگه‌ای بیفته. */
         #ai-void-stage {
             top: max(64px, 12vh); width: calc(100vw - 24px); gap: 14px;
-            max-height: calc(100vh - max(64px, 12vh) - 24px);
+            max-height: calc(100dvh - max(64px, 12vh) - 24px);
             overflow-y: auto; overscroll-behavior: contain;
             scrollbar-width: thin; scrollbar-color: rgba(165, 180, 252, .3) transparent;
             padding-bottom: 12px;
+        }
+        @supports not (height: 100dvh) {
+            #ai-void-stage { max-height: calc(100vh - max(64px, 12vh) - 24px); }
         }
         #ai-void-stage::-webkit-scrollbar { width: 6px; }
         #ai-void-stage::-webkit-scrollbar-track { background: transparent; }
@@ -2083,10 +2094,6 @@
             left: auto !important; right: auto !important; transform: none !important;
             width: 100%; max-width: none;
         }
-        /* زیرِ ۹۴۰px، لینک‌های پرکاربرد مخفی می‌شوند تا فضا برای Today/Echo/
-           Goals باز باشد؛ به‌محضِ رسیدنِ عرض به بالای همین آستانه (پنجره را
-           بزرگ کنید یا موبایل نباشد)، دوباره ظاهر می‌شوند — چون این فقط یک
-           display:none شرطی است، نه حذفِ داده؛ هیچ لینکی گم نمی‌شود. */
         #ai-ntp-topsites {
             display: none;
         }
@@ -2096,6 +2103,22 @@
     }
     /* این یکی صرفاً ظاهریه (اندازهٔ فونتِ برندِ سرچ روی گوشی) — چیدمانِ
        ستونی بالا این‌جا نیست، چون از ۹۴۰px به پایین از قبل فعاله. */
+    @media (max-width: 940px) {
+        /* Keep expanded panels usable together on short and narrow screens. */
+        #ai-void-todo-dock:not(.is-collapsed) .ai-void-agenda-body {
+            max-height: min(42vh, 300px);
+        }
+        #ai-void-echo:not(.is-collapsed) {
+            max-height: min(42vh, 320px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .ai-void-agenda-section.is-goals:not([hidden]) {
+            max-height: min(34vh, 240px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    }
     @media (max-width: 700px) {
         #ai-void-search-brand-name { font-size: 18px; }
     }
