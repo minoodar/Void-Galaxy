@@ -33,7 +33,24 @@
   let goalsList = document.getElementById('ai-void-goals-list');
   if (!dock || !handle || !list || !count || !sideButton || !dateHead || !eventsList) return;
 
-  document.body.appendChild(dock);
+  const stage = document.getElementById('ai-void-stage');
+  const echoPanel = document.getElementById('ai-void-echo');
+  const compactLayout = window.matchMedia('(max-width: 940px)');
+  function syncDockParent() {
+    if (compactLayout.matches && stage) {
+      /* Compact CSS expects Today to join the Stage's scrolling column. */
+      if (dock.parentElement !== stage) {
+        stage.insertBefore(dock, echoPanel && echoPanel.parentElement === stage ? echoPanel : null);
+      }
+    } else if (dock.parentElement !== document.body) {
+      /* Keep desktop Today viewport anchored outside the Stage. */
+      document.body.appendChild(dock);
+    }
+    try { window.dispatchEvent(new Event('void-panel-layout-changed')); } catch (e) {}
+  }
+  syncDockParent();
+  if (compactLayout.addEventListener) compactLayout.addEventListener('change', syncDockParent);
+  else window.addEventListener('resize', syncDockParent, { passive: true });
 
   // اگر HTML قدیمی بدون بخش Goals باشد، همین‌جا می‌سازیم تا نمایش اهداف از کار نیفتد.
   // محلِ پیش‌فرضِ ساخت: کنارِ Today's Echo (نه داخلِ داکِ Today) — چون این
@@ -1288,6 +1305,7 @@ if (typeof repositionForLayoutChange === 'function') {
     dock.dataset.side = position.side === 'left' ? 'left' : 'right';
     dock.style.top = (Math.max(0.04, Math.min(0.78, Number(position.top) || 0.22)) * 100) + 'vh';
     applyQuickbarOpposite();
+    try { window.dispatchEvent(new Event('void-panel-layout-changed')); } catch (e) {}
   }
   function savePosition() {
     try { chrome.storage.local.set({ voidTodoDock: position }); } catch (e) {}
