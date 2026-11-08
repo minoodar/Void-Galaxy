@@ -228,22 +228,101 @@ function mapNagerHolidays(data, countryCode) {
     });
 }
 
+function handleFetchGlobalHolidays(message, sendResponse) {
+  let responded = false;
+  const respondOnce = (response) => {
+    if (responded) return;
+    responded = true;
+    sendResponse(response);
+  };
+  const errorResponse = (error) => ({
+    success: false,
+    error: String((error && error.message) || error)
+  });
+
+  try {
+    const countryCode = String(message.countryCode || '').toUpperCase();
+    const year = message.year;
+
+    if (countryCode === 'IR') {
+      try {
+        getIranHolidaysList().then((result) => {
+          respondOnce({ success: true, data: result.data, source: result.source });
+        }).catch(() => {
+          respondOnce({ success: true, data: IRAN_HOLIDAYS, source: 'iran-static' });
+        });
+      } catch (error) {
+        respondOnce({ success: true, data: IRAN_HOLIDAYS, source: 'iran-static' });
+      }
+      return true;
+    }
+
+    const cacheKey = holidaysCacheKeyFor(countryCode, year);
+    chrome.storage.local.get([cacheKey], (res) => {
+      try {
+        const storageError = chrome.runtime.lastError;
+        if (storageError) {
+          respondOnce(errorResponse(storageError));
+          return;
+        }
+        if (res && res[cacheKey]) {
+          respondOnce({ success: true, data: res[cacheKey], source: 'cache' });
+          return;
+        }
+        fetch(`${NAGER_BASE_URL}/${year}/${countryCode}`)
+          .then((r) => { if (!r.ok) throw new Error('Nager API request failed'); return r.json(); })
+          .then((data) => {
+            const holidays = mapNagerHolidays(data, countryCode);
+            chrome.storage.local.set({ [cacheKey]: holidays });
+            respondOnce({ success: true, data: holidays, source: 'nager' });
+          })
+          .catch((error) => respondOnce(errorResponse(error)));
+      } catch (error) {
+        respondOnce(errorResponse(error));
+      }
+    });
+  } catch (error) {
+    respondOnce(errorResponse(error));
+    return false;
+  }
+
+  return true;
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || message.action !== 'fetchGlobalHolidays') return;
+  return handleFetchGlobalHolidays(message, sendResponse);
+});
+
 let musicOwnerTabId = null;
 const MUSIC_OWNER_KEY = 'voidMusicPlaybackOwnerTabId';
-const musicOwnerReady = chrome.storage.session.get(MUSIC_OWNER_KEY).then(async (stored) => {
-  const savedId = stored && stored[MUSIC_OWNER_KEY];
-  if (!Number.isInteger(savedId)) return;
-  try { await chrome.tabs.get(savedId); musicOwnerTabId = savedId; }
-  catch (e) { await chrome.storage.session.remove(MUSIC_OWNER_KEY); }
-}).catch(() => {});
+let musicOwnerReady = Promise.resolve();
+try {
+  musicOwnerReady = chrome.storage.session.get(MUSIC_OWNER_KEY).then(async (stored) => {
+    const savedId = stored && stored[MUSIC_OWNER_KEY];
+    if (!Number.isInteger(savedId)) return;
+    try { await chrome.tabs.get(savedId); musicOwnerTabId = savedId; }
+    catch (e) { await chrome.storage.session.remove(MUSIC_OWNER_KEY); }
+  }).catch((error) => {
+    musicCoordLog('owner-init-error', { stage: 'restore', message: error && error.message, stack: error && error.stack });
+  });
+} catch (error) {
+  musicCoordLog('owner-init-error', { stage: 'restore-start', message: error && error.message, stack: error && error.stack });
+}
 let musicClaimQueue = musicOwnerReady;
 
-chrome.tabs.onRemoved.addListener((tabId) => {
-  if (musicOwnerTabId === tabId) {
-    musicOwnerTabId = null;
-    musicClaimQueue = musicClaimQueue.then(() => chrome.storage.session.remove(MUSIC_OWNER_KEY)).catch(() => {});
-  }
-});
+try {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    if (musicOwnerTabId === tabId) {
+      musicOwnerTabId = null;
+      musicClaimQueue = musicClaimQueue.then(() => chrome.storage.session.remove(MUSIC_OWNER_KEY)).catch((error) => {
+        musicCoordLog('owner-init-error', { stage: 'remove-on-tab-close', message: error && error.message, stack: error && error.stack });
+      });
+    }
+  });
+} catch (error) {
+  musicCoordLog('owner-init-error', { stage: 'tab-removed-listener', message: error && error.message, stack: error && error.stack });
+}
 
 function isVoidTabUrl(url) {
   return typeof url === 'string' && url.startsWith(chrome.runtime.getURL('void-tab.html'));
@@ -567,38 +646,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch((error) => {
         sendResponse({ success: false, error: String((error && error.message) || error) });
       });
-
-    return true;
-  }
-
-  if (message.action === 'fetchGlobalHolidays') {
-    const countryCode = String(message.countryCode || '').toUpperCase();
-    const year = message.year;
-
-    if (countryCode === 'IR') {
-      getIranHolidaysList().then((result) => {
-        sendResponse({ success: true, data: result.data, source: result.source });
-      }).catch(() => {
-        sendResponse({ success: true, data: IRAN_HOLIDAYS, source: 'iran-static' });
-      });
-      return true;
-    }
-
-    const cacheKey = holidaysCacheKeyFor(countryCode, year);
-    chrome.storage.local.get([cacheKey], (res) => {
-      if (res[cacheKey]) {
-        sendResponse({ success: true, data: res[cacheKey], source: 'cache' });
-        return;
-      }
-      fetch(`${NAGER_BASE_URL}/${year}/${countryCode}`)
-        .then((r) => { if (!r.ok) throw new Error('Nager API request failed'); return r.json(); })
-        .then((data) => {
-          const holidays = mapNagerHolidays(data, countryCode);
-          chrome.storage.local.set({ [cacheKey]: holidays });
-          sendResponse({ success: true, data: holidays, source: 'nager' });
-        })
-        .catch((error) => sendResponse({ success: false, error: String((error && error.message) || error) }));
-    });
 
     return true;
   }
