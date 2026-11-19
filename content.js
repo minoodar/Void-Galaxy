@@ -432,7 +432,7 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
             <div class="ai-mark-event-meta" id="ai-mark-event-meta"></div>
             <label class="ai-mark-golden-toggle ai-mark-delete-toggle" id="ai-mark-delete-row">
               <input type="checkbox" id="ai-mark-delete-cb" class="ai-mark-golden-cb ai-mark-delete-cb" />
-              <span class="ai-mark-star-btn ai-mark-delete-label" id="ai-mark-delete-label">🗑</span>
+              <span class="ai-mark-star-btn ai-mark-delete-label" id="ai-mark-delete-label">×</span>
             </label>
             <div class="ai-mark-event-daily-list is-empty" id="ai-mark-event-daily-list"></div>
           </div>
@@ -703,11 +703,9 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
   workNoteDock.setAttribute('aria-label', 'Work note shortcuts');
   const workNoteDockList = document.createElement('div');
   workNoteDockList.className = 'ai-work-note-dock-list';
-  workNoteDock.appendChild(workNoteDockList);
-  const workNoteDockMoreList = document.createElement('div');
-  workNoteDockMoreList.className = 'ai-work-note-dock-more-list';
-  workNoteDockMoreList.hidden = true;
-  workNoteDock.appendChild(workNoteDockMoreList);
+  const workNoteDockActions = document.createElement('div');
+  workNoteDockActions.className = 'ai-work-note-dock-actions';
+  workNoteDock.append(workNoteDockActions, workNoteDockList);
 
   root.classList.add('orbit-root'); hub.classList.add('orbit-hub');
   root.appendChild(quantumBloom);
@@ -1927,8 +1925,14 @@ function openMarkEventSheet(m) {
       ru: `через ${m.days}д`
     });
 
-    // از جداکننده نقطه میانی (·) با ایزولاسیون جهت استفاده کنید
-    uiEls.markEventMeta.textContent = `${daysLeftStr} · ${dateStr} · ${calHint}`;
+    // شمارش معکوس را از تاریخ و نوع تقویم جدا می‌کنیم تا خواناتر دیده شود.
+    const countdown = document.createElement('span');
+    countdown.className = 'ai-mark-event-countdown';
+    countdown.textContent = daysLeftStr;
+    const details = document.createElement('span');
+    details.className = 'ai-mark-event-meta-details';
+    details.textContent = `${dateStr} · ${calHint}`;
+    uiEls.markEventMeta.replaceChildren(countdown, details);
   }
 }
 
@@ -2178,7 +2182,7 @@ function openMarkEventSheet(m) {
       }
       appendEventGoalControls(row, evt);
       const delBtn = document.createElement('button');
-      delBtn.type = 'button'; delBtn.className = 'ai-mark-event-daily-del'; delBtn.title = t('markDeleteTitle'); delBtn.textContent = '×';
+      delBtn.type = 'button'; delBtn.className = 'ai-mark-event-daily-del'; delBtn.title = t('markDeleteTitle'); delBtn.setAttribute('aria-label', t('markDeleteTitle')); delBtn.textContent = '×';
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         deleteDashEvent(evt.id);
@@ -8314,12 +8318,11 @@ let hubAutoCollapsedByPanel = false;
     const labels = {
       scratch: { fa: 'پیش‌نویس', en: 'Draft', ar: 'مسودة', es: 'Borrador', de: 'Entwurf', fr: 'Brouillon', ja: '下書き', ru: 'Черновик' },
       add: { fa: 'یادداشت تازه', en: 'New note', ar: 'ملاحظة جديدة', es: 'Nueva nota', de: 'Neue Notiz', fr: 'Nouvelle note', ja: '新しいメモ', ru: 'Новая заметка' },
-      more: { fa: 'یادداشت‌های بیشتر', en: 'More notes', ar: 'ملاحظات أخرى', es: 'Más notas', de: 'Weitere Notizen', fr: 'Plus de notes', ja: '他のメモ', ru: 'Ещё заметки' },
-      moreShort: { fa: 'بیشتر', en: 'More', ar: 'المزيد', es: 'Más', de: 'Mehr', fr: 'Plus', ja: '他', ru: 'Ещё' },
       todo: { fa: 'افزودن به کارها', en: 'Add to Todo', ar: 'إضافة إلى المهام', es: 'Añadir a tareas', de: 'Zu Aufgaben', fr: 'Ajouter aux tâches', ja: 'Todoに追加', ru: 'Добавить в задачи' },
       todoLinked: { fa: 'در فهرست کارها', en: 'In Todo', ar: 'في المهام', es: 'En tareas', de: 'In Aufgaben', fr: 'Dans les tâches', ja: 'Todoに追加済み', ru: 'В задачах' },
       todoShort: { fa: '＋ کارها', en: '＋ Todo', ar: '＋ مهام', es: '＋ Tareas', de: '＋ Todo', fr: '＋ Tâches', ja: '＋ Todo', ru: '＋ Задачи' },
       todoLinkedShort: { fa: '✓ کارها', en: '✓ Todo', ar: '✓ مهام', es: '✓ Tareas', de: '✓ Todo', fr: '✓ Tâches', ja: '✓ Todo', ru: '✓ Задачи' },
+      todoLimit: { fa: 'حداکثر ۱۰ یادداشت می‌تواند به Todo وصل شود', en: 'Up to 10 notes can be linked to Todo', ar: 'يمكن ربط ١٠ ملاحظات كحد أقصى بالمهام', es: 'Se pueden vincular hasta 10 notas a Todo', de: 'Bis zu 10 Notizen können mit Todo verknüpft werden', fr: 'Jusqu’à 10 notes peuvent être liées à Todo', ja: 'Todoにリンクできるメモは最大10件です', ru: 'К Todo можно привязать не более 10 заметок' },
       delete: { fa: 'حذف یادداشت', en: 'Delete note', ar: 'حذف الملاحظة', es: 'Eliminar nota', de: 'Notiz löschen', fr: 'Supprimer la note', ja: 'メモを削除', ru: 'Удалить заметку' },
        confirmDelete: { fa: 'این یادداشت و کار متصل به آن در Todo حذف شوند؟', en: 'Delete this note and its linked Todo item?', ar: 'هل تريد حذف هذه الملاحظة ومهمة Todo المرتبطة بها؟', es: '¿Eliminar esta nota y su tarea vinculada?', de: 'Diese Notiz und die verknüpfte Todo-Aufgabe löschen?', fr: 'Supprimer cette note et la tâche Todo liée ?', ja: 'このメモとリンクされたTodo項目を削除しますか？', ru: 'Удалить заметку и связанную задачу Todo?' },
       empty: { fa: 'یادداشت کاری', en: 'Work note', ar: 'ملاحظة عمل', es: 'Nota de trabajo', de: 'Arbeitsnotiz', fr: 'Note de travail', ja: '作業メモ', ru: 'Рабочая заметка' }
@@ -8343,14 +8346,72 @@ let hubAutoCollapsedByPanel = false;
   }
 
   function normalizeWorkNotes(items) {
-    return (Array.isArray(items) ? items : []).filter(note => note && typeof note.text === 'string').map((note, index) => ({
+    const notes = (Array.isArray(items) ? items : []).filter(note => note && typeof note.text === 'string').map((note, index) => ({
       id: String(note.id || newLinkId('wn')),
       text: note.text,
       color: WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length],
       createdAt: Number(note.createdAt) || Date.now(),
       updatedAt: Number(note.updatedAt) || Number(note.createdAt) || Date.now(),
-      todoId: note.todoId ? String(note.todoId) : null
+      todoId: note.todoId ? String(note.todoId) : null,
+      order: note.order != null && Number.isFinite(Number(note.order)) ? Number(note.order) : null
     }));
+    if (!notes.some(note => Number.isFinite(note.order))) {
+      notes.slice().sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)).forEach((note, index) => { note.order = index; });
+    } else {
+      let next = Math.max(-1, ...notes.filter(note => Number.isFinite(note.order)).map(note => note.order)) + 1;
+      notes.filter(note => !Number.isFinite(note.order)).sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)).forEach(note => { note.order = next++; });
+    }
+    return notes;
+  }
+
+  function nextWorkNoteOrder() {
+    return Math.max(-1, ...workNotesData.map(note => Number.isFinite(note.order) ? note.order : -1)) + 1;
+  }
+
+  function makeWorkNote(text) {
+    const now = Date.now();
+    return { id: newLinkId('wn'), text: String(text || ''), color: WORK_NOTE_COLORS[workNotesData.length % WORK_NOTE_COLORS.length], order: nextWorkNoteOrder(), createdAt: now, updatedAt: now, todoId: null };
+  }
+
+  function getLinkedWorkNoteIds(todos) {
+    const taskIds = new Set((todos || []).map(todo => String(todo && todo.id || '')).filter(Boolean));
+    const noteIds = new Set((todos || []).map(todo => String(todo && todo.sourceWorkNoteId || '')).filter(Boolean));
+    workNotesData.forEach(note => { if (note.todoId && taskIds.has(String(note.todoId))) noteIds.add(note.id); });
+    return new Set(Array.from(noteIds).filter(id => workNotesData.some(note => note.id === id)));
+  }
+
+  function syncWorkNoteOrderToTodos() {
+    const orderedNotes = workNotesData.slice().sort((a, b) => a.order - b.order);
+    const rankByNote = new Map(orderedNotes.map((note, index) => [note.id, index]));
+    const rankByTask = new Map(orderedNotes.filter(note => note.todoId).map((note, index) => [String(note.todoId), rankByNote.get(note.id)]));
+    const taskRank = todo => rankByTask.get(String(todo.id)) ?? rankByNote.get(String(todo.sourceWorkNoteId));
+    const positions = [];
+    const linked = [];
+    todosData.forEach((todo, index) => {
+      if (taskRank(todo) !== undefined) { positions.push(index); linked.push(todo); }
+    });
+    if (linked.length < 2) return;
+    linked.sort((a, b) => taskRank(a) - taskRank(b));
+    positions.forEach((position, index) => { todosData[position] = linked[index]; });
+    saveTodos();
+    if (todoPanel.classList.contains('active')) renderTodos();
+  }
+
+  function reorderWorkNotes(draggedId, targetId, afterTarget) {
+    if (!draggedId || draggedId === targetId) return;
+    const ordered = workNotesData.slice().sort((a, b) => a.order - b.order);
+    const from = ordered.findIndex(note => note.id === draggedId);
+    const [moved] = from >= 0 ? ordered.splice(from, 1) : [];
+    if (!moved) return;
+    let target = ordered.findIndex(note => note.id === targetId);
+    if (target < 0) { ordered.splice(from, 0, moved); return; }
+    if (afterTarget) target++;
+    ordered.splice(target, 0, moved);
+    ordered.forEach((note, index) => { note.order = index; });
+    workNotesData = ordered;
+    persistWorkNotes();
+    syncWorkNoteOrderToTodos();
+    renderWorkNotes();
   }
 
   function syncWorkNoteDockPosition() {
@@ -8368,10 +8429,7 @@ let hubAutoCollapsedByPanel = false;
     let top = rect.top + Math.min(52, Math.max(16, rect.height * 0.12));
     left = Math.max(6, Math.min(window.innerWidth - dockWidth - 6, left));
     top = Math.max(6, Math.min(window.innerHeight - dockHeight - 6, top));
-    const popoverWidth = 184;
-    const rightOfDock = window.innerWidth - left - dockWidth;
     workNoteDock.dataset.side = dockSide;
-    workNoteDock.dataset.moreSide = rightOfDock >= popoverWidth + gap ? 'right' : left >= popoverWidth + gap ? 'left' : (dockSide === 'right' ? 'left' : 'right');
     workNoteDock.style.left = `${left}px`;
     workNoteDock.style.top = `${top}px`;
   }
@@ -8409,55 +8467,51 @@ let hubAutoCollapsedByPanel = false;
   function renderWorkNoteDock() {
     if (!workNoteDock || !workNoteDockList) return;
     workNoteDockList.innerHTML = '';
-    const sorted = workNotesData.slice().sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+    workNoteDockActions.innerHTML = '';
+    const sorted = workNotesData.slice().sort((a, b) => a.order - b.order);
     const draft = makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-draft', '✎', workNoteLabel('scratch'), () => { selectWorkNote(null); noteTextarea.focus(); });
     if (!activeWorkNoteId) draft.classList.add('is-active');
-    workNoteDockList.appendChild(draft);
-    workNoteDockList.appendChild(makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-add', '+', workNoteLabel('add'), () => createWorkNote()));
+    workNoteDockActions.append(draft, makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-add', '+', workNoteLabel('add'), () => createWorkNote()));
 
-    sorted.slice(0, 5).forEach((note, index) => {
-      const wrap = document.createElement('div'); wrap.className = 'ai-work-note-dock-card-wrap';
-      const card = makeWorkNoteDockButton('ai-work-note-dock-paper' + (activeWorkNoteId === note.id ? ' is-active' : ''), workNoteTitle(note, index), langPick({ fa: 'برای بازکردن و ویرایش یادداشت کلیک کنید', en: 'Open this note to edit' }), () => { closeWorkNoteMore(); selectWorkNote(note.id); noteTextarea.focus(); });
-      card.dataset.color = WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length];
-      card.title = `${card.title}: ${String(note.text || workNoteLabel('empty'))}`;
-      card.setAttribute('aria-label', card.title);
-      const remove = makeWorkNoteDockButton('ai-work-note-dock-delete', '×', workNoteLabel('delete'), () => removeWorkNote(note.id));
-      wrap.append(card, remove); workNoteDockList.appendChild(wrap);
-    });
-
-    workNoteDockMoreList.innerHTML = '';
-    if (sorted.length > 5) {
-      sorted.slice(5).forEach((note, offset) => {
-        const row = document.createElement('div'); row.className = 'ai-work-note-dock-more-row';
-        const index = offset + 5;
-        const open = makeWorkNoteDockButton('ai-work-note-more-open', workNoteTitle(note, index), String(note.text || workNoteLabel('empty')), () => { closeWorkNoteMore(); selectWorkNote(note.id); noteTextarea.focus(); });
-        open.dataset.color = WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length];
-        const remove = makeWorkNoteDockButton('ai-work-note-more-delete', '×', workNoteLabel('delete'), () => removeWorkNote(note.id));
-        row.append(open, remove); workNoteDockMoreList.appendChild(row);
+    for (let start = 0; start < sorted.length; start += 5) {
+      const column = document.createElement('div'); column.className = 'ai-work-note-dock-column';
+      sorted.slice(start, start + 5).forEach((note, offset) => {
+        const index = start + offset;
+        const wrap = document.createElement('div'); wrap.className = 'ai-work-note-dock-card-wrap';
+        const card = makeWorkNoteDockButton('ai-work-note-dock-paper' + (activeWorkNoteId === note.id ? ' is-active' : ''), workNoteTitle(note, index), langPick({ fa: 'برای بازکردن و ویرایش یادداشت کلیک کنید', en: 'Open this note to edit' }), () => { selectWorkNote(note.id); noteTextarea.focus(); });
+        card.dataset.color = WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length];
+        card.draggable = true;
+        card.title = `${card.title}: ${String(note.text || workNoteLabel('empty'))}`;
+        card.setAttribute('aria-label', card.title);
+        card.addEventListener('dragstart', event => {
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', note.id);
+          wrap.classList.add('is-dragging');
+        });
+        card.addEventListener('dragend', () => {
+          workNoteDockList.querySelectorAll('.is-dragging, .is-drop-target').forEach(el => el.classList.remove('is-dragging', 'is-drop-target'));
+        });
+        wrap.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; wrap.classList.add('is-drop-target'); });
+        wrap.addEventListener('dragleave', event => { if (!wrap.contains(event.relatedTarget)) wrap.classList.remove('is-drop-target'); });
+        wrap.addEventListener('drop', event => {
+          event.preventDefault(); event.stopPropagation();
+          const draggedId = event.dataTransfer.getData('text/plain');
+          const rect = wrap.getBoundingClientRect();
+          reorderWorkNotes(draggedId, note.id, event.clientY >= rect.top + rect.height / 2);
+        });
+        const remove = makeWorkNoteDockButton('ai-work-note-dock-delete', '×', workNoteLabel('delete'), () => removeWorkNote(note.id));
+        wrap.append(card, remove); column.appendChild(wrap);
       });
-      const more = makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-more', '⋯', `${workNoteLabel('more')} (${sorted.length - 5})`, () => {
-        workNoteDockMoreList.hidden = !workNoteDockMoreList.hidden;
-        workNoteDock.classList.toggle('has-more', !workNoteDockMoreList.hidden);
-        if (!workNoteDockMoreList.hidden) workNoteDockMoreList.scrollTop = 0;
-      });
-      workNoteDockList.appendChild(more);
-    } else {
-      workNoteDockMoreList.hidden = true;
-      workNoteDock.classList.remove('has-more');
+      workNoteDockList.appendChild(column);
     }
     const note = currentWorkNote();
     const linked = !!(note && todosData.some(todo => todo.sourceWorkNoteId === note.id || todo.id === note.todoId));
-    const todoButton = makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-todo' + (linked ? ' is-linked' : ''), linked ? '✓' : '+✓', linked ? workNoteLabel('todoLinked') : workNoteLabel('todo'), () => addCurrentNoteToTodo());
-    workNoteDockList.appendChild(todoButton);
+    const todoTitle = linked ? workNoteLabel('todoLinked') : getLinkedWorkNoteIds(todosData).size >= 10 ? workNoteLabel('todoLimit') : workNoteLabel('todo');
+    workNoteDockActions.appendChild(makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-todo' + (linked ? ' is-linked' : ''), linked ? '✓' : '+✓', todoTitle, () => addCurrentNoteToTodo()));
 
     const show = quickNoteForm.classList.contains('active') && !quickNoteForm.classList.contains('split-docked');
     workNoteDock.hidden = !show;
     if (show) requestAnimationFrame(syncWorkNoteDockPosition);
-  }
-
-  function closeWorkNoteMore() {
-    workNoteDockMoreList.hidden = true;
-    workNoteDock.classList.remove('has-more');
   }
 
   let workNoteDockPositionFrame = 0;
@@ -8519,7 +8573,6 @@ let hubAutoCollapsedByPanel = false;
     if (noteId === activeWorkNoteId) return;
     flushCurrentNoteValue();
     activeWorkNoteId = noteId || null;
-    closeWorkNoteMore();
     if (notepadUndo) { try { notepadUndo.clear(); } catch (e) {} }
     if (activeWorkNoteId) {
       const note = currentWorkNote();
@@ -8567,7 +8620,7 @@ let hubAutoCollapsedByPanel = false;
     let note = currentWorkNote();
     if (!note) {
       flushCurrentNoteValue();
-      note = { id: newLinkId('wn'), text, color: WORK_NOTE_COLORS[workNotesData.length % WORK_NOTE_COLORS.length], createdAt: Date.now(), updatedAt: Date.now(), todoId: null };
+      note = makeWorkNote(text);
       workNotesData.unshift(note);
       activeWorkNoteId = note.id;
       persistWorkNotes(); renderWorkNotes();
@@ -8582,9 +8635,15 @@ let hubAutoCollapsedByPanel = false;
       ? localData.aiTreeTodos
       : Array.isArray(syncData.aiTreeTodos) ? syncData.aiTreeTodos : todosData;
     todosData = storedTodos;
+    const existingTask = todosData.find(todo => todo.sourceWorkNoteId === note.id || String(todo.id) === String(note.todoId || ''));
+    if (!existingTask && getLinkedWorkNoteIds(todosData).size >= 10) {
+      persistWorkNotes(); renderWorkNotes();
+      showToastNotification(workNoteLabel('todoLimit'));
+      return;
+    }
     const latestText = String(activeWorkNoteId === note.id && noteTextarea ? noteTextarea.value : note.text || '').trim();
     if (latestText) note.text = latestText;
-    let task = todosData.find(todo => todo.sourceWorkNoteId === note.id || todo.id === note.todoId);
+    let task = existingTask;
     if (task) task.text = latestText || text;
     else {
       task = { id: newLinkId('td'), text: latestText || text, done: false, type: 'daily', createdAt: Date.now(), sourceWorkNoteId: note.id };
@@ -8599,7 +8658,7 @@ let hubAutoCollapsedByPanel = false;
 
   function createWorkNote() {
     flushCurrentNoteValue();
-    const note = { id: newLinkId('wn'), text: '', color: WORK_NOTE_COLORS[workNotesData.length % WORK_NOTE_COLORS.length], createdAt: Date.now(), updatedAt: Date.now(), todoId: null };
+    const note = makeWorkNote('');
     workNotesData.unshift(note); activeWorkNoteId = note.id;
     persistWorkNotes(); renderWorkNotes();
     noteTextarea.value = ''; updateNoteTokenMeter();
