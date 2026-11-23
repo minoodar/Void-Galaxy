@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     title: document.getElementById('title'),
     subtitle: document.getElementById('subtitle'),
     textarea: document.getElementById('note-text'),
+    editorWrap: document.querySelector('.editor-wrap'),
     tokenMeter: document.getElementById('token-meter'),
     alignLeft: document.getElementById('align-left'),
     alignCenter: document.getElementById('align-center'),
@@ -143,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================= Draft text sync =============================
   let draftSaveTimer = null;
   const WORK_NOTES_KEY = 'aiWorkNotes';
-  const WORK_NOTE_COLORS = ['amber', 'cyan', 'rose', 'violet', 'mint'];
+  const WORK_NOTE_COLORS = ['yellow', 'green', 'pink', 'blue', 'lavender', 'peach', 'lime', 'coral', 'teal', 'orange', 'amber', 'cyan', 'rose', 'violet', 'mint'];
   let workNotes = [];
   let activeWorkNoteId = new URLSearchParams(location.search).get('workNote') || null;
   let scratchDraftCache = null;
@@ -160,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
       todoLinkedShort: { fa: '✓ کارها', en: '✓ Todo', ar: '✓ مهام', es: '✓ Tareas', de: '✓ Todo', fr: '✓ Tâches', ja: '✓ Todo', ru: '✓ Задачи' },
       todoLinked: { fa: 'در فهرست کارها', en: 'Already in Todo', ar: 'موجود في المهام', es: 'Ya está en tareas', de: 'Bereits in Aufgaben', fr: 'Déjà dans les tâches', ja: 'Todoに追加済み', ru: 'Уже в задачах' },
        todoAdded: { fa: 'یادداشت به کارهای روزانه وصل شد', en: 'Note added to daily Todo', ar: 'أضيفت الملاحظة إلى المهام اليومية', es: 'Nota añadida a tareas diarias', de: 'Notiz zu täglichen Aufgaben hinzugefügt', fr: 'Note ajoutée aux tâches du jour', ja: 'メモを今日のTodoに追加しました', ru: 'Заметка добавлена в задачи на сегодня' },
-       todoLimit: { fa: 'حداکثر ۱۰ یادداشت می‌توانند از دفترچه به Todo وصل شوند', en: 'At most 10 notes can be linked to Todo from the notebook', ar: 'يمكن ربط 10 ملاحظات كحد أقصى بالمهام من دفتر الملاحظات', es: 'Se pueden vincular como máximo 10 notas a Todo desde el cuaderno', de: 'Höchstens 10 Notizen können aus dem Notizbuch mit Todo verknüpft werden', fr: 'Le carnet peut lier au maximum 10 notes à Todo', ja: 'ノートブックからTodoにリンクできるメモは最大10件です', ru: 'Из блокнота можно связать с Todo не более 10 заметок' }
+       todoLimit: { fa: 'یادداشت‌های بیشتری از دفترچه می‌توانند به Todo وصل شوند', en: 'More notebook notes can be linked to Todo', ar: 'يمكن ربط المزيد من الملاحظات بالمهام', es: 'Se pueden vincular más notas a tareas', de: 'Weitere Notizen können mit Todo verknüpft werden', fr: 'Davantage de notes peuvent être liées à Todo', ja: 'さらに多くのメモをTodoにリンクできます', ru: 'Можно связать больше заметок с Todo' }
     };
     return labels[key] && labels[key][currentLang] !== undefined ? labels[key][currentLang] : labels[key].en;
   }
@@ -234,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeWorkNoteId === note.id) {
       flushCurrentNote(); clearTimeout(todoSyncTimer); activeWorkNoteId = null;
       els.textarea.value = scratchDraftCache || '';
+      applyWorkNotePaper(null);
     }
     chrome.storage.local.get(['aiTreeTodos'], local => chrome.storage.sync.get(['aiTreeTodos'], sync => {
       const todos = Array.isArray(local.aiTreeTodos) ? local.aiTreeTodos : (Array.isArray(sync.aiTreeTodos) ? sync.aiTreeTodos : []);
@@ -251,10 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!els.workNoteTabs) return;
     const tabs = els.workNoteTabs; tabs.innerHTML = '';
     const sorted = workNotes.slice().sort((a, b) => a.order - b.order);
-    for (let start = 0; start < sorted.length; start += 5) {
-      const column = document.createElement('div'); column.className = 'work-note-column';
-      sorted.slice(start, start + 5).forEach((note, offset) => {
-        const index = start + offset;
+    sorted.forEach((note, index) => {
         const wrap = document.createElement('div'); wrap.className = 'work-note-tab-wrap';
         const tab = document.createElement('button'); tab.type = 'button'; tab.className = 'work-note-tab work-note-paper' + (activeWorkNoteId === note.id ? ' is-active' : '');
         tab.dataset.color = note.color; tab.textContent = workNoteTitle(note, index); tab.title = note.text || workNoteTitle(note, index);
@@ -269,10 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'work-note-tab-delete';
         remove.textContent = '×'; remove.title = workNoteLabel('delete'); remove.setAttribute('aria-label', workNoteLabel('delete'));
         remove.addEventListener('click', event => { event.stopPropagation(); removeWorkNote(note); });
-        wrap.append(tab, remove); column.appendChild(wrap);
-      });
-      tabs.appendChild(column);
-    }
+        wrap.append(tab, remove); tabs.appendChild(wrap);
+    });
     if (els.workNoteDraft) {
       els.workNoteDraft.title = workNoteLabel('draft');
       els.workNoteDraft.setAttribute('aria-label', workNoteLabel('draft'));
@@ -283,8 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const note = activeWorkNote();
       const linked = !!(note && note.todoId);
       els.workNoteTodo.textContent = linked ? workNoteLabel('todoLinkedShort') : workNoteLabel('todoShort');
-      const atLimit = !linked && linkedWorkNoteIds([]).size >= 10;
-      els.workNoteTodo.title = linked ? workNoteLabel('todoLinked') : atLimit ? workNoteLabel('todoLimit') : workNoteLabel('todo');
+      els.workNoteTodo.title = linked ? workNoteLabel('todoLinked') : workNoteLabel('todo');
     }
   }
   function saveWorkNoteText(id, text) {
@@ -312,11 +308,23 @@ document.addEventListener('DOMContentLoaded', () => {
     flushCurrentNote(); activeWorkNoteId = id || null;
     if (activeWorkNoteId) {
       const note = activeWorkNote(); if (!note) { activeWorkNoteId = null; return; }
-      els.textarea.value = note.text; renderWorkNotes(); updateTokenMeter(); return;
+      els.textarea.value = note.text; renderWorkNotes(); applyWorkNotePaper(note); updateTokenMeter(); return;
     }
-    renderWorkNotes();
+    renderWorkNotes(); applyWorkNotePaper(null);
     if (scratchDraftCache !== null) { els.textarea.value = scratchDraftCache; updateTokenMeter(); return; }
     chrome.storage.local.get(['savedPromptDraft'], data => { if (!activeWorkNoteId) { scratchDraftCache = data.savedPromptDraft || ''; els.textarea.value = scratchDraftCache; updateTokenMeter(); } });
+  }
+  function applyWorkNotePaper(note) {
+    const colors = {
+      yellow: ['#fff9db', '#463600'], green: ['#e9f8e9', '#173d20'], pink: ['#fff0f4', '#512332'],
+      blue: ['#edf5ff', '#1c3553'], lavender: ['#f3efff', '#352759'], peach: ['#fff1e5', '#542b12'],
+      lime: ['#f2f9df', '#344317'], coral: ['#fff0ee', '#522624'], teal: ['#e6f8f5', '#16413b'], orange: ['#fff3e8', '#512d16'],
+      amber: ['#fff7df', '#49370f'], cyan: ['#e8f9fc', '#173d43'], rose: ['#fff0f3', '#512332'], violet: ['#f3efff', '#352759'], mint: ['#e9f8f1', '#173d2c']
+    };
+    const [background, foreground] = note ? (colors[note.color] || colors.yellow) : ['', ''];
+    els.editorWrap.classList.toggle('is-work-note', !!note);
+    els.editorWrap.style.setProperty('--note-paper-bg', background);
+    els.editorWrap.style.setProperty('--note-paper-text', foreground);
   }
   function addWorkNote() {
     flushCurrentNote();
@@ -336,9 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const todos = Array.isArray(local.aiTreeTodos) ? local.aiTreeTodos : (Array.isArray(sync.aiTreeTodos) ? sync.aiTreeTodos : []);
       let task = todos.find(td => td.sourceWorkNoteId === note.id || td.id === note.todoId);
       if (task) task.text = text;
-       else if (linkedWorkNoteIds(todos).size >= 10) { persistWorkNotes(); renderWorkNotes(); showToast(workNoteLabel('todoLimit')); return; }
        else { task = { id: 'td_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text, done: false, type: 'daily', createdAt: Date.now(), sourceWorkNoteId: note.id }; todos.push(task); }
-      note.todoId = task.id; persistWorkNotes();
+      note.todoId = task.id; persistWorkNotes(); applyWorkNotePaper(note);
       chrome.storage.local.set({ aiTreeTodos: todos }); chrome.storage.sync.set({ aiTreeTodos: todos });
       try { window.__aiTreeTodosForVoid = todos; window.dispatchEvent(new CustomEvent('ai-tree-todos-updated', { detail: todos })); } catch (e) {}
       renderWorkNotes(); showToast(workNoteLabel('todoAdded'));
@@ -1464,8 +1471,8 @@ document.addEventListener('DOMContentLoaded', () => {
         scratchDraftCache = (data && typeof data.savedPromptDraft === 'string') ? data.savedPromptDraft : '';
         workNotes = normalizeWorkNotes(data && data[WORK_NOTES_KEY]);
         const requestedNote = activeWorkNote();
-        if (requestedNote) els.textarea.value = requestedNote.text;
-        else { activeWorkNoteId = null; els.textarea.value = scratchDraftCache; }
+        if (requestedNote) { els.textarea.value = requestedNote.text; applyWorkNotePaper(requestedNote); }
+        else { activeWorkNoteId = null; els.textarea.value = scratchDraftCache; applyWorkNotePaper(null); }
         lastValueForEmoji = els.textarea.value;
         if (data && data.noteTextAlign) setAlign(data.noteTextAlign, false);
         _localLoadData = data || {};
@@ -1476,6 +1483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data && Array.isArray(data[PROMPT_HIDDEN_KEY])) promptHiddenIds = data[PROMPT_HIDDEN_KEY];
         if (data && Array.isArray(data.aiTreeEmojiMemory) && data.aiTreeEmojiMemory.length) favoriteEmojis = data.aiTreeEmojiMemory.slice(0, 12);
         renderWorkNotes();
+        applyWorkNotePaper(requestedNote);
         updateTokenMeter();
         renderPrompts();
       }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Void Galaxy",
-  "version": "42.0",
+  "version": "42.1",
   "description": "Cosmic new-tab audio-visual experience: galaxy visualizer for your music, with a subtle idle singularity state.",
   "permissions": [
     "storage",

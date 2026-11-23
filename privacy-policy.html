@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#08090c">
+  <meta name="description" content="Privacy Policy for the Void Galaxy Chrome extension.">
+  <title>Privacy Policy — Void Galaxy</title>
+  <style>
+    :root { color-scheme: dark; --bg:#08090c; --panel:#101216; --text:#e8e8e7; --muted:#a7a9ad; --gold:#d4b46a; --silver:#c5cbd2; --line:rgba(212,180,106,.22); }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:radial-gradient(ellipse at 50% -15%,rgba(101,90,67,.19),transparent 48%),var(--bg); color:var(--text); font:16px/1.75 "Segoe UI",Arial,sans-serif; }
+    a { color:var(--gold); text-underline-offset:3px; }
+    a:hover { color:#f0d894; }
+    a:focus-visible { outline:2px solid var(--gold); outline-offset:4px; border-radius:2px; }
+    .shell { width:min(100% - 36px,900px); margin:0 auto; padding:64px 0 80px; }
+    header { padding:0 0 34px; border-bottom:1px solid var(--line); }
+    .eyebrow { color:var(--gold); font-size:.76rem; letter-spacing:.2em; text-transform:uppercase; }
+    h1 { margin:.35rem 0 .6rem; font-family:Georgia,"Times New Roman",serif; font-weight:400; font-size:clamp(2.4rem,7vw,4rem); letter-spacing:.025em; color:#f0eee8; }
+    .intro { color:var(--muted); max-width:680px; margin:0; }
+    .updated { color:#858a91; font-size:.88rem; margin-top:1.25rem; }
+    .notice { margin:26px 0 0; padding:14px 17px; border-left:2px solid var(--gold); background:rgba(212,180,106,.06); color:#c9cbd0; font-size:.94rem; }
+    main { padding-top:15px; }
+    section { padding:22px 0 20px; border-bottom:1px solid rgba(197,203,210,.11); }
+    h2 { margin:0 0 10px; color:var(--silver); font:400 1.35rem/1.35 Georgia,"Times New Roman",serif; }
+    p { margin:8px 0; }
+    ul { margin:8px 0; padding-left:1.35rem; }
+    li { padding:2px 0; }
+    code { color:#e4cf98; font: .9em ui-monospace,Consolas,monospace; overflow-wrap:anywhere; }
+    .muted { color:var(--muted); }
+    .contact { color:var(--gold); font-weight:600; }
+    footer { padding-top:25px; color:#838890; font-size:.87rem; }
+    @media (max-width:600px) { .shell { width:min(100% - 28px,900px); padding:42px 0 56px; } body { font-size:15px; } section { padding:19px 0; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="eyebrow">Void Galaxy · Privacy</div>
+      <h1>Privacy Policy</h1>
+      <p class="intro">This policy describes how the Void Galaxy Chrome extension handles information when you use its New Tab workspace and related features.</p>
+      <p class="updated">Effective date: November 20, 2026</p>
+      <p class="notice"><strong>In brief:</strong> Workspace information is stored in Chrome extension storage and, for some features, IndexedDB. Certain actions you request send text to external services for translation or spelling checks. Some settings and tasks use Chrome Sync.</p>
+    </header>
+    <main>
+      <section><h2>1. Introduction</h2><p>Void Galaxy is a browser extension that provides shortcuts, notes, prompts, planning tools, voice input, and music and audio features. This policy explains the information the extension handles, where it is processed, and the choices available to you. It describes the current implementation reviewed for this policy; external providers process information under their own terms and policies.</p></section>
+      <section><h2>2. Information We Handle</h2><p>Depending on the features you use, Void Galaxy may handle notes and text you enter, saved links and shortcuts, tasks and calendar details, prompts, workspace preferences, selected language, and browser-provided information about tabs and frequently visited sites. Voice input may temporarily process microphone audio. Audio visualization may process audio from a tab you choose to capture.</p><p>Void Galaxy does not operate a project server for the features reviewed. However, user-requested translation and spelling checks, some holiday lookups, model downloads, Chrome Sync, and ordinary navigation involve services outside the extension, as described below.</p></section>
+      <section><h2>3. Information Stored Locally</h2><p>The extension stores workspace data in Chrome's extension storage, including <code>storage.local</code>, and uses IndexedDB for archived memory records. Temporary session identifiers are kept in <code>storage.session</code>. Translation results may be held in a temporary in-memory cache for up to ten minutes.</p><p>Some todo, marked-day, or profile-related values are written to <code>storage.sync</code>. Chrome may synchronize these values through your Google account when Chrome Sync is enabled. Chrome Sync is governed by your Chrome settings and Google's applicable terms. The extension code does not provide the publisher with a copy of this synchronized information.</p></section>
+      <section><h2>4. Translation and Google API</h2><p>When you request translation, the text you submit from the notebook is sent to Google's translation endpoint (<code>translate.googleapis.com</code>) so Google can return a translation and, where available, related word suggestions. This happens to fulfill your request. Google processes that text as an external service provider under its own terms and practices.</p><p>Do not submit confidential or sensitive text for translation unless you accept having it processed by Google. Translation results may be temporarily cached in the extension service worker; this cache is not persistent storage.</p></section>
+      <section><h2>5. Browser Permissions and Their Purposes</h2><ul>
+        <li><code>storage</code>: save workspace information and settings locally or through Chrome Sync where the code uses sync storage.</li>
+        <li><code>tabs</code>: identify and interact with tabs for music ownership, navigation, and user-requested audio capture.</li>
+        <li><code>activeTab</code> and <code>scripting</code>: support extension actions on a tab when invoked and manage supported page integrations.</li>
+        <li><code>offscreen</code>: run microphone recording and audio processing in an extension offscreen document.</li>
+        <li><code>topSites</code>: show Chrome's frequently visited sites as shortcuts.</li>
+        <li><code>favicon</code>: display site icons beside shortcuts.</li>
+        <li><code>tabCapture</code>: capture audio from a tab after the user starts the capture feature.</li>
+        <li>Host permissions for web pages: support the extension's media controls and integration scripts on sites. The extension may inspect page media elements and tab details to provide those features.</li>
+      </ul><p>The manifest grants broad host access. This does not mean the extension uploads all browsing activity. The reviewed code uses browser tab and site information for its features; no upload of a complete browsing history to a publisher-operated server was identified.</p></section>
+      <section><h2>6. Bookmarks, Browsing Information, and Website Shortcuts</h2><p>You can save links and shortcuts in the extension's local workspace. The frequent-links feature can also read sites supplied by Chrome's Top Sites API. The extension can store your pinned and hidden shortcut choices locally. These browser-provided site details are used to display shortcuts; the reviewed code did not show them being sent to a publisher-operated server.</p><p>When you open a shortcut, search, or website, your browser connects to the destination you selected. That destination may receive standard connection information from your browser.</p></section>
+      <section><h2>7. Microphone and Audio Features</h2><p>Voice input starts after you activate the microphone feature (including the direct continuation of a voice action you initiated). The extension records audio for transcription, with a maximum recording interval of 60 seconds per capture. The reviewed code runs Whisper transcription locally in the browser extension. It downloads the model from Hugging Face and may retain model files in browser cache. The inspected transcription flow did not upload microphone audio or the resulting transcript to a transcription service.</p><p>Audio visualization can capture audio from a tab you choose using Chrome's tab-capture feature. Audio is processed by the extension for playback and visualization. The reviewed capture path did not show captured tab audio being sent to a publisher-operated server. Websites may independently process their own media and data under their own policies.</p><p>Microphone access requires browser permission. You can revoke it through Chrome's site or extension permission settings.</p></section>
+      <section><h2>8. Calendar, Notes, and AI Prompts</h2><p>Notes, saved prompts, tasks, calendar-related entries, and preferences are stored in extension storage as described above. Some task and profile-related fields may be stored through Chrome Sync. The extension includes Iranian public holidays locally. For public holidays in other countries, it requests the year and country code from the Nager.Date API; the returned holiday data is cached locally. These requests do not need to include your notes.</p></section>
+      <section><h2>9. Data Sharing and Third-Party Services</h2><p>In addition to Google translation, the spelling and grammar feature sends the text you ask it to check and a language code to LanguageTool's public API (<code>api.languagetool.org</code>). Avoid submitting sensitive text unless you accept that provider's processing.</p><p>Other external services include Nager.Date for non-Iran holiday data and Hugging Face for voice-model downloads. Chrome Sync may synchronize fields stored with <code>storage.sync</code>. Search providers and websites receive requests when you choose to search or navigate to them. Each provider's own privacy terms govern its processing.</p><p>No analytics or telemetry service was identified in the inspected application source. This statement is limited to the reviewed repository code and does not cover Chrome, external providers, or future versions.</p></section>
+      <section><h2>10. Data Retention and Deletion</h2><p>Information in <code>storage.local</code> and IndexedDB remains in the browser until you delete it or remove the extension; archived memory records have an implementation-defined retention period of up to one year. Chrome Sync data follows your Chrome Sync settings and account controls. Clearing extension data or uninstalling the extension may remove locally stored information, but synced data may remain in your Google account or other browser backups. The temporary translation cache expires after ten minutes or when the service worker is cleared. Browser cache may retain downloaded voice-model files until Chrome removes them or you clear site data.</p><p>External providers may retain submitted text or service request data under their own policies; consult those providers for their retention controls.</p></section>
+      <section><h2>11. Data Security</h2><p>Workspace information is stored using browser-provided storage. No system can be described as completely secure, and the extension cannot control the security of your device, Chrome profile, synced account, or third-party services. Keep your device and browser account protected and avoid entering sensitive information into features that send text to an external provider.</p></section>
+      <section><h2>12. Children's Privacy</h2><p>Void Galaxy is a general-purpose browser extension and is not designed to collect personal information from children. The publisher does not intentionally collect information through a publisher-operated server. If you believe a child has submitted information to an external service through the extension, contact that provider and the publisher using the contact details below.</p></section>
+      <section><h2>13. Changes to This Policy</h2><p>This policy may be updated when the extension's features or data practices change. The effective date above indicates the latest revision. Material changes will be reflected on this page.</p></section>
+      <section><h2>14. Contact Information</h2><p>For privacy questions, contact the publisher at: <a class="contact" href="mailto:minoodar@gmail.com">minoodar@gmail.com</a></p></section>
+    </main>
+    <footer>Void Galaxy · Privacy Policy</footer>
+  </div>
+</body>
+</html>
+

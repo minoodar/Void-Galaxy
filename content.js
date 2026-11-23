@@ -53,7 +53,7 @@
   let scratchDraftCache = null;
   let workNoteTodoSyncTimer = null;
   const WORK_NOTES_STORAGE_KEY = 'aiWorkNotes';
-  const WORK_NOTE_COLORS = ['amber', 'cyan', 'rose', 'violet', 'mint'];
+  const WORK_NOTE_COLORS = ['yellow', 'green', 'pink', 'blue', 'lavender', 'peach', 'lime', 'coral', 'teal', 'orange', 'amber', 'cyan', 'rose', 'violet', 'mint'];
   let activeTodoTab = 'daily';
   let addForTomorrow = false;
   const TODO_DAILY_TTL_MS = 24 * 60 * 60 * 1000;
@@ -1699,6 +1699,7 @@ updateSeasonalTracker();
     const incoming = Array.isArray(nv) ? nv : [];
     if (JSON.stringify(incoming) === JSON.stringify(todosData)) return;
     todosData = incoming; migrateTodos(); pruneExpiredDailyTodos(); publishTodosToVoidTab();
+    applyActiveWorkNotePaper();
     if (todoPanel.classList.contains('active')) renderTodos();
     if (typeof renderWorkNotes === 'function') renderWorkNotes();
   }
@@ -8349,7 +8350,7 @@ let hubAutoCollapsedByPanel = false;
     const notes = (Array.isArray(items) ? items : []).filter(note => note && typeof note.text === 'string').map((note, index) => ({
       id: String(note.id || newLinkId('wn')),
       text: note.text,
-      color: WORK_NOTE_COLORS.includes(note.color) ? note.color : WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length],
+      color: WORK_NOTE_COLORS[index % WORK_NOTE_COLORS.length],
       createdAt: Number(note.createdAt) || Date.now(),
       updatedAt: Number(note.updatedAt) || Number(note.createdAt) || Date.now(),
       todoId: note.todoId ? String(note.todoId) : null,
@@ -8371,6 +8372,21 @@ let hubAutoCollapsedByPanel = false;
   function makeWorkNote(text) {
     const now = Date.now();
     return { id: newLinkId('wn'), text: String(text || ''), color: WORK_NOTE_COLORS[workNotesData.length % WORK_NOTE_COLORS.length], order: nextWorkNoteOrder(), createdAt: now, updatedAt: now, todoId: null };
+  }
+
+  function applyActiveWorkNotePaper(note = currentWorkNote()) {
+    if (!noteTextarea) return;
+    const colors = {
+      yellow: ['#fff9db', '#463600'], green: ['#e9f8e9', '#173d20'], pink: ['#fff0f4', '#512332'],
+      blue: ['#edf5ff', '#1c3553'], lavender: ['#f3efff', '#352759'], peach: ['#fff1e5', '#542b12'],
+      lime: ['#f2f9df', '#344317'], coral: ['#fff0ee', '#522624'], teal: ['#e6f8f5', '#16413b'], orange: ['#fff3e8', '#512d16'],
+      amber: ['#fff7df', '#49370f'], cyan: ['#e8f9fc', '#173d43'], rose: ['#fff0f3', '#512332'], violet: ['#f3efff', '#352759'], mint: ['#e9f8f1', '#173d2c']
+    };
+    const linked = !!(note && (note.todoId || todosData.some(todo => todo.sourceWorkNoteId === note.id)));
+    const [background, foreground] = linked ? (colors[note.color] || colors.yellow) : ['', ''];
+    noteTextarea.classList.toggle('ai-note-todo-paper', linked);
+    noteTextarea.style.setProperty('--todo-paper-bg', background);
+    noteTextarea.style.setProperty('--todo-paper-text', foreground);
   }
 
   function getLinkedWorkNoteIds(todos) {
@@ -8473,9 +8489,9 @@ let hubAutoCollapsedByPanel = false;
     if (!activeWorkNoteId) draft.classList.add('is-active');
     workNoteDockActions.append(draft, makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-add', '+', workNoteLabel('add'), () => createWorkNote()));
 
-    for (let start = 0; start < sorted.length; start += 5) {
+    for (let start = 0; start < sorted.length; start += 6) {
       const column = document.createElement('div'); column.className = 'ai-work-note-dock-column';
-      sorted.slice(start, start + 5).forEach((note, offset) => {
+      sorted.slice(start, start + 6).forEach((note, offset) => {
         const index = start + offset;
         const wrap = document.createElement('div'); wrap.className = 'ai-work-note-dock-card-wrap';
         const card = makeWorkNoteDockButton('ai-work-note-dock-paper' + (activeWorkNoteId === note.id ? ' is-active' : ''), workNoteTitle(note, index), langPick({ fa: 'برای بازکردن و ویرایش یادداشت کلیک کنید', en: 'Open this note to edit' }), () => { selectWorkNote(note.id); noteTextarea.focus(); });
@@ -8506,7 +8522,7 @@ let hubAutoCollapsedByPanel = false;
     }
     const note = currentWorkNote();
     const linked = !!(note && todosData.some(todo => todo.sourceWorkNoteId === note.id || todo.id === note.todoId));
-    const todoTitle = linked ? workNoteLabel('todoLinked') : getLinkedWorkNoteIds(todosData).size >= 10 ? workNoteLabel('todoLimit') : workNoteLabel('todo');
+    const todoTitle = linked ? workNoteLabel('todoLinked') : workNoteLabel('todo');
     workNoteDockActions.appendChild(makeWorkNoteDockButton('ai-work-note-dock-action ai-work-note-dock-todo' + (linked ? ' is-linked' : ''), linked ? '✓' : '+✓', todoTitle, () => addCurrentNoteToTodo()));
 
     const show = quickNoteForm.classList.contains('active') && !quickNoteForm.classList.contains('split-docked');
@@ -8578,12 +8594,14 @@ let hubAutoCollapsedByPanel = false;
       const note = currentWorkNote();
       if (!note) { activeWorkNoteId = null; return; }
       noteTextarea.value = String(note.text || '');
+      applyActiveWorkNotePaper(note);
       renderWorkNotes();
       updateNoteTokenMeter();
       if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
       return;
     }
     renderWorkNotes();
+    applyActiveWorkNotePaper(null);
     if (scratchDraftCache !== null) {
       noteTextarea.value = scratchDraftCache;
       updateNoteTokenMeter();
@@ -8609,6 +8627,8 @@ let hubAutoCollapsedByPanel = false;
     try {
       chrome.storage.local.get([WORK_NOTES_STORAGE_KEY], (res) => {
         workNotesData = normalizeWorkNotes(res && res[WORK_NOTES_STORAGE_KEY]);
+        persistWorkNotes();
+        applyActiveWorkNotePaper();
         renderWorkNotes();
       });
     } catch (e) { renderWorkNotes(); }
@@ -8636,11 +8656,6 @@ let hubAutoCollapsedByPanel = false;
       : Array.isArray(syncData.aiTreeTodos) ? syncData.aiTreeTodos : todosData;
     todosData = storedTodos;
     const existingTask = todosData.find(todo => todo.sourceWorkNoteId === note.id || String(todo.id) === String(note.todoId || ''));
-    if (!existingTask && getLinkedWorkNoteIds(todosData).size >= 10) {
-      persistWorkNotes(); renderWorkNotes();
-      showToastNotification(workNoteLabel('todoLimit'));
-      return;
-    }
     const latestText = String(activeWorkNoteId === note.id && noteTextarea ? noteTextarea.value : note.text || '').trim();
     if (latestText) note.text = latestText;
     let task = existingTask;
@@ -8650,6 +8665,7 @@ let hubAutoCollapsedByPanel = false;
       todosData.push(task);
     }
     note.todoId = task.id;
+    applyActiveWorkNotePaper(note);
     persistWorkNotes(); saveTodos();
     if (todoPanel.classList.contains('active')) renderTodos();
     renderWorkNotes();
@@ -8662,6 +8678,7 @@ let hubAutoCollapsedByPanel = false;
     workNotesData.unshift(note); activeWorkNoteId = note.id;
     persistWorkNotes(); renderWorkNotes();
     noteTextarea.value = ''; updateNoteTokenMeter();
+    applyActiveWorkNotePaper(note);
     if (notepadUndo) { try { notepadUndo.clear(); } catch (e) {} }
     if (typeof autoGrowNotepad === 'function') autoGrowNotepad();
     noteTextarea.focus();

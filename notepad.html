@@ -137,10 +137,9 @@
   }
   .prompts-panel.open { display: flex; }
   .work-notes-nav { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 7px; flex-shrink: 0; }
-  .work-note-tabs { display: flex; align-items: flex-start; gap: 6px; flex: 1; min-width: 0; overflow: visible; }
-  .work-note-column { display: grid; grid-auto-flow: column; grid-template-rows: repeat(5, 40px); grid-auto-columns: 48px; gap: 6px; flex: 0 0 auto; padding: 5px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: rgba(0,0,0,.12); }
+  .work-note-tabs { display: flex; align-items: flex-start; flex-direction: row; flex-wrap: nowrap; gap: 6px; flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: visible; padding: 5px 2px 8px; scrollbar-width: thin; }
   .work-note-actions { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
-  .work-note-tab-wrap { position: relative; width: 48px; height: 40px; }
+  .work-note-tab-wrap { position: relative; width: 48px; height: 40px; flex: 0 0 48px; }
   .work-note-tab { cursor: grab; }
   .work-note-tab:active { cursor: grabbing; }
   .work-note-tab-wrap.is-dragging { opacity: .4; }
@@ -154,6 +153,16 @@
   .work-note-tab-delete:hover, .work-note-tab-delete:focus-visible { transform: scale(1.08); }
   @media (hover: none) { .work-note-tab-delete { opacity: .8; visibility: visible; pointer-events: auto; } }
   .work-note-paper[data-color="amber"] { --work-color: #fbbf24; background: rgba(251,191,36,.15); }
+  .work-note-paper[data-color="yellow"] { --work-color: #eab308; background: #8a6b12; color: #fff8dc; }
+  .work-note-paper[data-color="green"] { --work-color: #22c55e; background: #24643a; color: #edfff1; }
+  .work-note-paper[data-color="pink"] { --work-color: #ec8ca8; background: #804454; color: #fff0f4; }
+  .work-note-paper[data-color="blue"] { --work-color: #60a5fa; background: #315b83; color: #eef7ff; }
+  .work-note-paper[data-color="lavender"] { --work-color: #a78bfa; background: #57487f; color: #f5f0ff; }
+  .work-note-paper[data-color="peach"] { --work-color: #fb923c; background: #81502e; color: #fff3e8; }
+  .work-note-paper[data-color="lime"] { --work-color: #84cc16; background: #536b20; color: #f7ffdf; }
+  .work-note-paper[data-color="coral"] { --work-color: #fb7185; background: #82424a; color: #fff0ee; }
+  .work-note-paper[data-color="teal"] { --work-color: #2dd4bf; background: #245f59; color: #e6fffb; }
+  .work-note-paper[data-color="orange"] { --work-color: #f97316; background: #82461e; color: #fff3e8; }
   .work-note-paper[data-color="cyan"] { --work-color: #22d3ee; background: rgba(34,211,238,.13); }
   .work-note-paper[data-color="rose"] { --work-color: #fb7185; background: rgba(251,113,133,.14); }
   .work-note-paper[data-color="violet"] { --work-color: #a78bfa; background: rgba(167,139,250,.15); }
@@ -295,7 +304,9 @@
     line-height: 1.7;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 500;
+    transition: background-color .18s ease, color .18s ease;
   }
+  .editor-wrap.is-work-note textarea#note-text { background: var(--note-paper-bg, #fff); color: var(--note-paper-text, #111); }
 
   .status-row {
     display: flex;
