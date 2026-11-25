@@ -1,410 +1,454 @@
-# 🌌 Void Galaxy (v43.0)
-
 <div align="center">
 
-![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-10B981?style=for-the-badge&logo=googlechrome)
-![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-3B82F6?style=for-the-badge&logo=javascript)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript)
+# 🌌 Void Galaxy
 
-**Floating Orbital Workspace · Nolan-Style Cosmic Wormhole Music Engine · 13-Constellation Real-Sky Wheel · Fuzzy Bookmark & Prompt Manager**
+### *Your browser, reborn as a living galaxy.*
+
+**An orbital workspace · A cinematic music galaxy · The most complete New Tab on Earth**
+
+[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Install_v42.1-10B981?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-minoodar.github.io%2Fvoid-8B5CF6?style=for-the-badge&logo=githubpages&logoColor=white)](https://minoodar.github.io/void/)
+![Manifest V3](https://img.shields.io/badge/Manifest-V3-3B82F6?style=for-the-badge&logo=googlechrome&logoColor=white)
+![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-Zero_Dependencies-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Privacy](https://img.shields.io/badge/Privacy-100%25_Local-EC4899?style=for-the-badge&logo=shield&logoColor=white)
+![Languages](https://img.shields.io/badge/Languages-12-F59E0B?style=for-the-badge&logo=googletranslate&logoColor=white)
+![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-64748B?style=for-the-badge)
 
 ### 🎥 Watch the Demonstration
 [![Void Galaxy Demonstration](https://img.youtube.com/vi/KwHp3kiX7DU/maxresdefault.jpg)](https://youtu.be/KwHp3kiX7DU)
+
 *(Click the image to watch the video on YouTube)*
+
+**[🇬🇧 English](#english) · [🇮🇷 فارسی](#persian) · [🇨🇳 简体中文](#zh-cn) · [🇹🇼 繁體中文](#zh-tw) · [🇧🇷 Português](#portuguese) · [🇹🇷 Türkçe](#turkish) · [🇪🇸 Español](#spanish) · [🇩🇪 Deutsch](#german) · [🇫🇷 Français](#french) · [🇯🇵 日本語](#japanese) · [🇷🇺 Русский](#russian) · [🇸🇦 العربية](#arabic)**
 
 </div>
 
 ---
 
-<details open>
-<summary><strong>🇮🇷 فارسی (Persian)</strong></summary>
+<a id="english"></a>
 
-<br>
+## 🇬🇧 English
 
-<div dir="rtl">
+> **Void Galaxy v42.1** is a free, open-source Chrome extension that turns an ordinary browser into a calm, beautiful, private universe: a floating orbital launcher, a sticky-note memory wall, a prompt vault, a goal-driven To-Do system, a real-sky zodiac New Tab, and a music galaxy that breathes with your songs.
+>
+> Written in pure **Vanilla JavaScript**. **Zero dependencies. Zero servers. Zero tracking.** Everything you create stays on your device.
 
-### 🚀 فضای کاری مدار و شناور نهایی (نسخه v43.0 - Void Galaxy)
-*تب نو (Void Galaxy) به ابعاد تازه‌ای از زیبایی رسیده است! سفری سینمایی به کرم‌چاله به سبک فیلم‌های نولان، ویژوالایزر صوتی شگفت‌انگیز، بهبودهای گسترده در رابط کاربری (UI) و تولتیپ‌های هوشمند، همراه با چرخ نجومی ۱۳ صورت فلکی و مدیریت حرفه‌ای بوکمارک‌ها.*
+### 🚀 Install in 10 seconds
 
-افزونه Void Galaxy نسخه 42.0 یک اکوسیستم بهره‌وری شناور و خالص مبتنی بر **Vanilla JS** (بدون وابستگی خارجی) است که مرورگر شما را به یک کهکشان زنده تبدیل می‌کند.
+**Official release:** [Chrome Web Store → Void Galaxy](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij)
 
-#### 🌟 امکانات و ویژگی‌های جدید (v43.0)
-- **🌀 تجربه سینمایی سفر به کرم‌چاله (Nolan-Style Wormhole):** ویژوالایزر ارتقایافته کهکشانی با افکت‌های حیرت‌انگیز ورود به کرم‌چاله و همگام‌سازی بصری عمیق با موسیقی.
-- **✨ ارتقای رابط کاربری (UI) و تولتیپ‌ها:** بازطراحی کامل راهنماها و تولتیپ‌های شناور برای تعامل بسیار روان‌تر و بصری‌تر.
-- **🪐 موتور پخش موسیقی و ویژوالایزر کهکشانی:** پشتیبانی هوشمند از SoundCloud و پخش‌کننده‌های وب با شناسایی خودکار کلیدهای کنترلی و قابلیت تنظیم کیفیت گرافیکی.
-- **♈ چرخ نجومی ۱۳ صورت فلکی و نشانگر اعتدال بهاری:** طراحی‌شده بر اساس مختصات واقعی ستاره‌ای RA/Dec با ۱۳ صورت فلکی دایره‌البروجی (شامل Ophiuchus).
-- **📚 مدیریت و جستجوی فازی بوکمارک‌ها:** ستاره‌گذاری، ارزیابی کیفیت، دسته‌بندی و جستجوی هوشمند بر اساس محتوا.
-- **🧠 مدیریت و دسته‌بندی پرامپت‌های هوش مصنوعی:** خزانه‌داری اختصاصی برای ذخیره و فراخوانی سریع پرامپت‌ها.
-- **🎙️ استودیو هوشمند و یادداشت‌برداری صوتی:** دفترچه یادداشت کارآمد (حافظه دوم) مجهز به **تبدیل صوت به متن آفلاین و رایگان** (با مدل داخلی Whisper)، غلط‌گیر انگلیسی و فارسی.
-- **✅ کارهای پیشرفته، اهداف و آتش‌بازی تعاملی:** اولویت‌بندی تسک‌ها، اتصال به اهداف کلان و جشن‌های پیروزی پویا.
-- **🛡️ امن، مطمئن و ۱۲ زبانه:** پشتیبانی کامل از ۱۲ زبان زنده دنیا، پشتیبان‌گیری JSON و همگام‌سازی کروم.
-
-#### 💻 نحوه نصب (حالت توسعه‌دهنده)
-1. کلون کردن مخزن `minoodar/Void-Galaxy` یا دانلود فایل ZIP.
-2. رفتن به آدرس `chrome://extensions/` و فعال کردن **Developer mode (حالت توسعه‌دهنده)**.
-3. کلیک روی **Load unpacked** و انتخاب پوشه پروژه.
-
-#### 💖 حمایت و مشارکت
-به‌عنوان یک توسعه‌دهنده مستقل هوش مصنوعی در ایران، نگهداری و توسعه این پروژه منبع‌باز به شدت به حمایت جامعه وابسته است.
-- **بیت‌کوین (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **ریال ایران:** [حمایت از طریق دونیتو](https://donito.me/u-b8wjr)
-
-</div>
-
-</details>
+**Try it before you install:** [minoodar.github.io/void](https://minoodar.github.io/void/) – the web edition plays your local music with the same galaxy effects.
 
 <details>
-<summary><strong>🇺🇸 English</strong></summary>
+<summary><b>Developer mode install</b></summary>
 
-<br>
-
-### 🚀 The Ultimate Orbital Workspace (v43.0 - Void Galaxy)
-*Void Galaxy has transcended into a new dimension! Experience the cinematic Nolan-style cosmic wormhole audio visualizer, refined UI with intuitive tooltips, 13-constellation real-sky astronomical wheel, fuzzy bookmark search engine, AI prompt vault, and offline voice dictation memo.*
-
-Void Galaxy v43.0 is a pure **Vanilla JS**, zero-dependency extension that transforms your browser into a floating productivity ecosystem. 
-
-#### 🌟 Core & New Features (v43.0)
-- **🌀 Cinematic Nolan-Style Wormhole Visualizer:** A mind-bending audio-reactive cosmic journey through space-time warp effects synced with your music playback.
-- **✨ Refined UI & Enhanced Tooltips:** Polished user interface controls, glassmorphic interactions, and smart floating tooltips.
-- **🪐 Galactic Music Engine & SoundCloud Sync:** Automatically detects playback controls for SoundCloud and supported web players with custom galaxy rendering quality options.
-- **♈ 13-Constellation Real-Sky Wheel & Vernal Equinox Indicator:** Built using actual RA/Dec star coordinates with 13 zodiac constellations including Ophiuchus.
-- **📚 Advanced Fuzzy Bookmark Manager & Quality Rating:** Star ratings, quality assessment, category grouping, advanced fuzzy searching, and content-based lookup.
-- **🧠 AI Prompt Vault & Categorization:** A dedicated repository for storing and quickly accessing your master AI prompts.
-- **🎙️ Smart Studio & Voice Notepad:** Second-brain notepad featuring **100% free built-in offline voice-to-text dictation** (powered by local Whisper), complete English spellcheck, and baseline Persian proofreading.
-- **✅ Advanced To-Do & Goal Fireworks:** Task separation, goal-weight linking, and dynamic fireworks scaling from 30% to 100% completion.
-- **🛡️ Secure, Reliable & 12 Languages:** Fully localized in 12 languages (including Persian), Chrome sync, and 1-click JSON backup.
-
-#### 💻 Installation (Developer Mode)
-1. Clone `minoodar/Void-Galaxy` or download the ZIP.
-2. Go to `chrome://extensions/` and enable **Developer mode**.
+1. Clone `minoodar/Void-Galaxy` or download the ZIP and extract it.
+2. Open `chrome://extensions/` and enable **Developer mode**.
 3. Click **Load unpacked** and select the project folder.
 
-#### 💖 Support & Contribute
-As an independent AI developer based in war-torn Iran, maintaining and expanding this open-source project relies heavily on community support.
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **Iranian Rial (IRR):** [Donate via Donito](https://donito.me/u-b8wjr)
-
 </details>
 
-<details>
-<summary><strong>🇨🇳 简体中文 (Simplified Chinese)</strong></summary>
+### 🪐 The Universe Inside
 
-<br>
+#### 🆕 The "New Void" New Tab
+Open a new tab and meet the most complete new-tab experience we know of. It is built around four living orbs:
 
-### 🚀 终极轨道工作区 (v43.0 - Void Galaxy)
-*Void Galaxy 现已跨入全新维度！体验诺兰电影风格的星际虫洞音频可视化、全面优化的 UI 与智能提示 (Tooltips)、13 黄道星座真实星空罗盘、模糊书签搜索及 AI 提示词库。*
+- **Today** – your day at a glance, with smart occasions and calendar context.
+- **Goals** – long-term aims that your tasks feed into.
+- **Echo** – a quiet space to leave thoughts for your future self.
+- **Quick Links** – your most-used sites, one glance away.
 
-Void Galaxy v43.0 是一款纯 **Vanilla JS**、零依赖的扩展程序。
+Behind them, a **13-constellation real-sky zodiac wheel**, built from true RA/Dec star coordinates (including **Ophiuchus**) with a vernal-equinox marker, forms an exceptional, softly animated constellation sky.
 
-#### 🌟 核心与全新功能 (v43.0)
-- **🌀 诺兰风格电影级虫洞可视化：** 随音乐律动的震撼时空虫洞穿梭特效。
-- **✨ UI 界面与 Hover 提示全面优化：** 精巧的 Glassmorphic 交互设计与智能浮动提示。
-- **🪐 银河音乐引擎与 SoundCloud 联动：** 支持在线播放器自动识别与 Galaxy 渲染画质调节。
-- **♈ 13 星座真实星空罗盘：** 包含 13 个黄道星座及春分点指示器。
-- **📚 模糊书签管理与 AI 提示词库：** 支持星标评级、模糊搜索及提示词分类存储。
-- **🎙️ 智能工作室与语音记事本：** 内置 **100% 免费离线语音转文字**（Whisper）。
-- **🌍 12 种语言支持：** 完全本地化支持波斯语、英语、简体中文等 12 种语言。
+#### 🎵 The Music Galaxy
+Play music **locally**, straight from your own files, exactly like the [web edition](https://minoodar.github.io/void/). Your tracks become a spiral galaxy:
 
-#### 💻 安装指南 (开发者模式)
-1. 克隆 `minoodar/Void-Galaxy` 或下载 ZIP 文件。
-2. 转到 `chrome://extensions/` 并启用 **开发者模式 (Developer mode)**。
-3. 点击 **加载已解压的扩展程序 (Load unpacked)** 并选择项目文件夹。
+- A black hole at the centre, spiral arms that move with the rhythm, comets, star streams and cosmic light blooms synced to the beat.
+- Per-track star ratings, search inside your library, shuffle, an equalizer and sound-quality settings.
+- Album covers appear inside the black hole at the start and end of each track, and on click.
+- Detects playback controls of supported web players (such as SoundCloud) and adjusts rendering quality for your hardware.
 
-#### 💖 支持与贡献
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **伊朗里亚尔 (IRR):** [通过 Donito 捐赠](https://donito.me/u-b8wjr)
+#### 📝 Sticky Notes Memory Wall
+Your notepad is a **second brain** that looks like a real wall.
 
-</details>
+- Every note becomes a **coloured paper note**, just like 3M sticky notes on a wall or monitor, neatly arranged for you.
+- Daily notes, ideas and reminders live side by side and stay **connected to your To-Do list**.
+- **Voice input from your microphone** turns speech into text, with English and Persian proofreading.
+- **Online translation** at your fingertips.
+- **LLM-powered Markdown pages:** every page can be rendered as clean Markdown with full LLM tooling, an idea inspired by another open community and credited in the [License & Attribution](#license) section.
 
-<details>
-<summary><strong>🇹🇼 繁體中文 (Traditional Chinese)</strong></summary>
+#### 🧠 Prompt Vault
+Complete prompt management for the AI era:
 
-<br>
+- Create, edit, categorize and star your master prompts.
+- **Instant search** across every prompt.
+- One-click copy, so your best prompts are always a hotkey away.
 
-### 🚀 終極軌道工作區 (v43.0 - Void Galaxy)
-*Void Galaxy 現已跨入全新維度！體驗諾蘭電影風格的星際蟲洞音訊視覺化、全面優化的 UI 與智能提示 (Tooltips)、13 黃道星座真實星空羅盤、模糊書籤搜尋及 AI 提示詞庫。*
+#### 📚 Bookmark Manager
+- Star ratings and quality assessment.
+- Category grouping.
+- **Fuzzy search** that finds what you meant, not only what you typed, including content-based lookup.
 
-Void Galaxy v43.0 是一款純 **Vanilla JS**、零依賴的擴充功能。
+#### ✅ To-Do, Goals & Fireworks
+- Separate tasks from big goals and **link each task to a goal with its own weight**.
+- Prioritize, schedule and tick off.
+- Progress is celebrated with **dynamic fireworks**, scaling from 30% up to 100% completion.
 
-#### 🌟 核心與全新功能 (v43.0)
-- **🌀 諾蘭風格電影級蟲洞視覺化：** 隨音樂律動的震撼時空蟲洞穿梭特效。
-- **✨ UI 介面與 Tooltips 全面優化：** 精巧的 Glassmorphic 互動設計與智能浮動提示。
-- **🪐 銀河音樂引擎與 SoundCloud 連動：** 支援線上播放器自動識別與 Galaxy 渲染畫質調節。
-- **♈ 13 星座真實星空羅盤：** 包含 13 個黃道星座及春分點指示器。
-- **📚 模糊書籤管理與 AI 提示詞庫：** 支援星標評級、模糊搜尋及提示詞分類儲存。
-- **🎙️ 智能工作室與語音記事本：** 內建 **100% 免費離線語音轉文字**（Whisper）。
-- **🌍 12 種語言支援：** 完全在地化支援波斯語、英語、繁體中文等 12 種語言。
+#### 🌍 Smart Occasions, Anywhere on Earth
+The calendar understands the world: **holidays and occasions for any location** appear intelligently, so your plans respect the culture and calendar of wherever you are.
 
-#### 💻 安裝指南 (開發者模式)
-1. 複製 `minoodar/Void-Galaxy` 或下載 ZIP 檔案。
-2. 前往 `chrome://extensions/` 並啟用 **開發人員模式 (Developer mode)**。
-3. 點擊 **載入未封裝項目 (Load unpacked)** 並選擇專案資料夾。
+#### 🗣️ 12 Languages
+Fully localized in **12 languages**: English, Persian, Chinese (Simplified and Traditional), Portuguese, Turkish, Spanish, German, French, Japanese, Russian and Arabic, including right-to-left layouts.
 
-#### 💖 支持與貢獻
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **伊朗里亞爾 (IRR):** [透過 Donito 捐贈](https://donito.me/u-b8wjr)
+#### 🛡️ Private by Design
+- **No servers. No accounts. No analytics.** Your data is never sent anywhere.
+- **Complete local backup:** bookmarks, prompts, notes, goals and To-Do in one JSON file you own.
+- Optional Chrome sync of settings, and one-click restore.
 
-</details>
+### 🧭 Philosophy
 
-<details>
-<summary><strong>🇧🇷 Português (Brazilian Portuguese)</strong></summary>
+Void Galaxy believes software should feel like looking at the night sky: quiet, vast and yours. No noise, no ads, no strings attached. Music is not downloaded or taken away; it simply orbits.
 
-<br>
+### 🗺️ At a Glance
 
-### 🚀 O Espaço de Trabalho Orbital Definitivo (v43.0 - Void Galaxy)
-*Void Galaxy atingiu uma nova dimensão! Experimente o visualizador de áudio em estilo wormhole cinematográfico (estilo Nolan), UI aprimorada com dicas de ferramentas inteligentes (tooltips), roda astronômica de 13 constelações e busca fuzzy de favoritos.*
+| Area | What you get |
+|---|---|
+| New Tab | Today, Goals, Echo, quick links, 13-constellation sky |
+| Music | Local playback, galaxy visualizer, ratings, EQ, album cover in the black hole |
+| Notes | Sticky-note wall, voice dictation, translation, Markdown + LLM pages |
+| Prompts | Categories, stars, instant search |
+| Bookmarks | Fuzzy search, ratings, categories |
+| Tasks | To-Do linked to weighted goals, fireworks |
+| Calendar | Smart occasions for any place in the world |
+| Privacy | 100% local, full JSON backup |
+| Languages | 12 |
 
-Void Galaxy v43.0 é uma extensão pura em **Vanilla JS**.
+---
 
-#### 🌟 Recursos Principais (v43.0)
-- **🌀 Visualizador de Wormhole Cinematográfico (Estilo Nolan):** Uma jornada cósmica reativa ao som através de efeitos de dobra espacial.
-- **✨ UI Aprimorada & Dicas de Ferramentas (Tooltips):** Interface otimizada e tooltips flutuantes interativos.
-- **🪐 Motor de Música Galáctico & SoundCloud Sync:** Suporte inteligente para players web e ajuste de qualidade de renderização.
-- **♈ Roda Astronômica de 13 Constelações & Indicador do Equinócio.**
-- **📚 Gerenciador Avançado de Favoritos com Busca Fuzzy e Prompts de IA.**
-- **🎙️ Bloco de Notas com Ditado por Voz Offline 100% Gratuito (Whisper).**
-- **🌍 12 Idiomas:** Suporte totalmente localizado incluindo persa, inglês, português, etc.
-
-#### 💻 Instalação (Modo Desenvolvedor)
-1. Clone `minoodar/Void-Galaxy` ou baixe o ZIP.
-2. Acesse `chrome://extensions/` e ative o **Modo do desenvolvedor**.
-3. Clique em **Carregar sem compactação** e selecione a pasta.
-
-#### 💖 Apoio e Contribuição
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **Rial Iraniano (IRR):** [Doe via Donito](https://donito.me/u-b8wjr)
-
-</details>
-
-<details>
-<summary><strong>🇹🇷 Türkçe (Turkish)</strong></summary>
-
-<br>
-
-### 🚀 Nihai Yörünge Çalışma Alanı (v43.0 - Void Galaxy)
-*Void Galaxy yeni bir boyuta ulaştı! Nolan tarzı sinematik solucan deliği (wormhole) müzik görselleştiricisi, geliştirilmiş UI ve akıllı ipuçları (tooltips), 13 takımyıldızlı gökyüzü çarkı ve bulanık yer imi arama motoru.*
-
-Void Galaxy v43.0, saf **Vanilla JS** ile yazılmış eklentidir.
-
-#### 🌟 Temel ve Yeni Özellikler (v43.0)
-- **🌀 Nolan Tarzı Sinematik Solucan Deliği Görselleştiricisi:** Müzikle senkronize uzay-zaman bükülme efektleriyle büyüleyici bir ses görselleştirici.
-- **✨ Geliştirilmiş UI ve Akıllı Araç İpuçları (Tooltips):** Yenilenmiş arayüz ve akıcı etkileşimler.
-- **🪐 Galaktik Müzik Motoru ve SoundCloud Senkronizasyonu.**
-- **♈ 13 Takımyıldızlı Gerçek Gökyüzü Çarkı.**
-- **📚 Bulanık Arama Yer İmi Yöneticisi ve Yapay Zeka Prompt Kasası.**
-- **🎙️ Akıllı Not Defteri (%100 ücretsiz çevrimdışı Whisper sesli yazdırma).**
-- **🌍 12 Dil Desteği:** Farsça, İngilizce, Türkçe ve diğer diller.
-
-#### 💻 Kurulum (Geliştirici Modu)
-1. `minoodar/Void-Galaxy` deposunu klonlayın veya ZIP indirin.
-2. `chrome://extensions/` adresine gidin ve **Geliştirici modunu** etkinleştirin.
-3. **Paketlenmemiş öğe yükle** butonuna tıklayın ve klasörü seçin.
-
-#### 💖 Destek ve Katkı
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **İran Riyali (IRR):** [Donito üzerinden bağış yapın](https://donito.me/u-b8wjr)
-
-</details>
-
-<details>
-<summary><strong>🇪🇸 Español</strong></summary>
-
-<br>
-
-### 🚀 El Espacio de Trabajo Orbital Definitivo (v43.0 - Void Galaxy)
-*¡Void Galaxy ha alcanzado una nueva dimensión! Experimenta el visualizador estilo agujero de gusano (estilo Nolan), interfaz optimizada con tooltips inteligentes, rueda de 13 constelaciones y búsqueda fuzzy.*
-
-Void Galaxy v43.0 es una extensión en **Vanilla JS** puro.
-
-#### 🌟 Características Principales (v43.0)
-- **🌀 Visualizador Estilo Agujero de Gusano (Estilo Nolan):** Un viaje cósmico interactivo adaptado al ritmo de tu música.
-- **✨ UI Optimizada y Tooltips Inteligentes:** Interfaz pulida con respuestas visuales fluidas.
-- **🪐 Motor Galáctico de Música y SoundCloud Sync.**
-- **♈ Rueda Astronómica de 13 Constelaciones.**
-- **📚 Búsqueda Fuzzy de Marcadores y Bóveda de Prompts de IA.**
-- **🎙️ Bloc de Notas con Voz (Whisper offline 100% gratis).**
-- **🌍 12 Idiomas:** Localizado en persa, inglés, español y más.
-
-#### 💻 Instalación (Modo Desarrollador)
-1. Clona `minoodar/Void-Galaxy` o descarga el ZIP.
-2. Ve a `chrome://extensions/` y activa el **Modo de desarrollador**.
-3. Haz clic en **Cargar extensión sin empaquetar** y selecciona la carpeta.
-
-#### 💖 Apoyo y Contribuciones
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **Rial Iraní (IRR):** [Donar vía Donito](https://donito.me/u-b8wjr)
-
-</details>
-
-<details>
-<summary><strong>🇩🇪 Deutsch</strong></summary>
-
-<br>
-
-### 🚀 Der Ultimative Orbitale Workspace (v43.0 - Void Galaxy)
-*Void Galaxy hat eine neue Dimension erreicht! Erleben Sie den visuellen Nolan-Wurmloch-Audio-Visualisierer, eine verbesserte Benutzeroberfläche mit Tooltips, das 13-Sternbilder-Himmelsrad und den Fuzzy-Lesezeichenmanager.*
-
-Void Galaxy v43.0 ist eine reines **Vanilla JS** Extension.
-
-#### 🌟 Hauptmerkmale (v43.0)
-- **🌀 Cinematische Wurmloch-Visualisierung (Nolan-Stil):** Atemberaubende Raum-Zeit-Effekte, synchronisiert mit Ihrer Musik.
-- **✨ Optimierte UI & Intelligente Tooltips:** Verfeinerte Benutzeroberfläche mit flüssigen Animationen.
-- **🪐 Galaktischer Musik-Engine & SoundCloud-Integration.**
-- **♈ 13-Sternbilder-Himmelsrad.**
-- **📚 Fuzzy-Lesezeichenmanager & KI-Prompt-Tresor.**
-- **🎙️ Sprachnotizbuch (100% kostenloses Offline-Whisper).**
-- **🌍 12 Sprachen:** Vollständig lokalisiert in Persisch, Englisch, Deutsch u.v.m.
-
-#### 💻 Installation (Entwicklermodus)
-1. Klone `minoodar/Void-Galaxy` oder lade die ZIP herunter.
-2. Öffne `chrome://extensions/` und aktiviere den **Entwicklermodus**.
-3. Klicke auf **Entpackte Erweiterung laden** und wähle den Ordner.
-
-#### 💖 Unterstützung & Beitrag
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **Iranischer Rial (IRR):** [Spenden via Donito](https://donito.me/u-b8wjr)
-
-</details>
-
-<details>
-<summary><strong>🇫🇷 Français</strong></summary>
-
-<br>
-
-### 🚀 L'Espace de Travail Orbital Ultime (v43.0 - Void Galaxy)
-*Void Galaxy a atteint une nouvelle dimension ! Découvrez le visualiseur de trou de ver cinématique style Nolan, une interface améliorée avec des info-bulles (tooltips) intelligentes et la roue à 13 constellations.*
-
-Void Galaxy v43.0 est une extension en **Vanilla JS** pur.
-
-#### 🌟 Fonctionnalités Clés (v43.0)
-- **🌀 Visualiseur Trou de Ver Cinématique (Style Nolan) :** Une expérience visuelle cosmique et dynamique au rythme de votre musique.
-- **✨ Interface UI & Info-bulles (Tooltips) Améliorées :** Commandes raffinées et infobulles explicatives.
-- **🪐 Moteur de Musique Galactique & SoundCloud Sync.**
-- **♈ Roue Astronomique à 13 Constellations.**
-- **📚 Gestionnaire de Favoris Fuzzy & Coffre de Prompts IA.**
-- **🎙️ Bloc-notes Vocal (Whisper hors ligne 100% gratuit).**
-- **🌍 12 Langues :** Localisé en persan, anglais, français et plus.
-
-#### 💻 Installation (Mode Développeur)
-1. Clonez `minoodar/Void-Galaxy` ou téléchargez le ZIP.
-2. Allez sur `chrome://extensions/` et activez le **Mode développeur**.
-3. Cliquez sur **Charger l'extension non empaquetée** et sélectionnez le dossier.
-
-#### 💖 Soutien et Contribution
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **Rial Iranien (IRR):** [Faire un don via Donito](https://donito.me/u-b8wjr)
-
-</details>
-
-<details>
-<summary><strong>🇯🇵 日本語 (Japanese)</strong></summary>
-
-<br>
-
-### 🚀 究極のオービタル・ワークスペース (v43.0 - Void Galaxy)
-*Void Galaxyが新たな次元に到達しました！ノーラン映画スタイルのシネマティック・ワームホール・ビジュアライザー、ツールチップとUIの最適化、13星座リアル天体ホイールを搭載。*
-
-Void Galaxy v43.0 はピュアな **Vanilla JS** 拡張機能です。
-
-#### 🌟 主な機能 (v43.0)
-- **🌀 ノーランスタイル・ワームホール・ビジュアライザー:** 音楽と完全に同期する時空ワープのシネマティック・オーディオビジュアライザー。
-- **✨ 洗練されたUIとスマートツールチップ:** 直感的なホバーガイドとスムーズな操作感。
-- **🪐 ギャラクティック・ミュージックエンジン＆SoundCloud連携。**
-- **♈ 13星座リアル天体ホイール。**
-- **📚 あいまい検索ブックマークマネージャー＆AIプロンプト金庫。**
-- **🎙️ 音声メモ（100%無料ローカルWhisper）。**
-- **🌍 12言語対応:** ペルシャ語、英語、日本語を含む12言語に完全ローカライズ。
-
-#### 💻 インストール方法 (デベロッパーモード)
-1. `minoodar/Void-Galaxy` をクローンするか、ZIP をダウンロード。
-2. `chrome://extensions/` を開き、**デベロッパーモード** を有効に。
-3. **パッケージ化されていない拡張機能を読み込む** をクリックし、フォルダを選択。
-
-#### 💖 サポートと寄付
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **イラン・リアル (IRR):** [Donitoで寄付する](https://donito.me/u-b8wjr)
-
-</details>
-
-<details>
-<summary><strong>🇷🇺 Русский (Russian)</strong></summary>
-
-<br>
-
-### 🚀 Ультимативное Орбитальное Пространство (v43.0 - Void Galaxy)
-*Void Galaxy перешла в новое измерение! Кинематографический визуализатор червоточины в стиле Нолана, обновленный интерфейс с умными подсказками (tooltips) и колесо 13 созвездий.*
-
-Void Galaxy v43.0 — это расширение на чистом **Vanilla JS**.
-
-#### 🌟 Ключевые особенности (v43.0)
-- **🌀 Кинематографический визуализатор Червоточины (В стиле Нолана):** Впечатляющий аудиовизуализатор с эффектами искривления пространства.
-- **✨ Улучшенный UI и Умные Подсказки (Tooltips):** Оптимизированный интерфейс и удобные подсказки.
-- **🪐 Музыкальный движок Сатурна и SoundCloud.**
-- **♈ Колесо 13 созвездий реального неба.**
-- **📚 Менеджер закладок с нечетким поиском и Хранилище промптов.**
-- **🎙️ Голосовой блокнот (100% бесплатный офлайн Whisper).**
-- **🌍 12 Языков:** Полностью локализован на персидский, английский, русский и др.
-
-#### 💻 Установка (Режим разработчика)
-1. Клонируйте `minoodar/Void-Galaxy` или скачайте ZIP.
-2. Перейдите в `chrome://extensions/` и включите **Режим разработчика**.
-3. Нажмите **Загрузить распакованное расширение** и выберите папку.
-
-#### 💖 Поддержка и донаты
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **Иранский риал (IRR):** [Пожертвовать через Donito](https://donito.me/u-b8wjr)
-
-</details>
-
-<details>
-<summary><strong>🇸🇦 العربية (Arabic)</strong></summary>
-
-<br>
+<a id="persian"></a>
 
 <div dir="rtl">
 
-### 🚀 مساحة العمل المدارية المطلقة (v43.0 - Void Galaxy)
-*انتقلت Void Galaxy إلى بُعد جديد! استمتع بمشهد الثقب الدودي (Wormhole) السينمائي على طريقة أفلام نولان، واجهة مستخدم محسّنة مع تلميحات أدوات ذكية (Tooltips)، وعجلة 13 برجًا.*
+## 🇮🇷 فارسی
 
-Void Galaxy الإصدار v43.0 هو إضافة مبنية بالكامل بلغة **Vanilla JS**.
+> **Void Galaxy نسخه ۴۲٫۱** یک افزونه‌ی رایگان و متن‌باز کروم است که مرورگر شما را به یک جهان آرام، زیبا و کاملاً خصوصی تبدیل می‌کند: لانچر مداری شناور، دیوار یادداشت‌های رنگی، گنجینه‌ی پرامپت‌ها، مدیریت کارها و اهداف، تب جدید با آسمان صور فلکی واقعی و کهکشان موسیقی که با آهنگ‌های شما نفس می‌کشد.
+>
+> نوشته‌شده با **Vanilla JavaScript** خالص؛ **بدون وابستگی، بدون سرور و بدون ردیابی.** هر آنچه می‌سازید فقط روی دستگاه خودتان می‌ماند.
 
-#### 🌟 أبرز الميزات الأساسية والجديدة (v43.0)
-- **🌀 مشهد الثقب الدودي السينمائي (نمط نولان):** رحلة بصرية مذهلة متفاعلة مع الموسيقى عبر تأثيرات الانحناء الزمني والمكاني.
-- **✨ واجهة مستخدم محسّنة وتلميحات ذكية (Tooltips):** عناصر تحكم مصقولة وتلميحات توضيحية عائمة سلسة.
-- **🪐 محرك موسيقى المجرة وتوافق SoundCloud.**
-- **♈ عجلة السماء الحقيقية لـ 13 برجًا.**
-- **📚 بحث تقريبي للإشارات المرجعية وخزنة مطالبات الذكاء الاصطناعي.**
-- **🎙️ المفكرة الصوتية (إملاء مجاني 100% بدون إنترنت مع Whisper).**
-- **🌍 12 لغة عالمية:** معربة بالكامل بما في ذلك الفارسية، الإنجليزية، العربية وغيرها.
+### 🚀 نصب
 
-#### 💻 طريقة التثبيت (وضع المطور)
-1. قم بعمل Clone لمستودع `minoodar/Void-Galaxy` أو قم بتنزيل ملف ZIP.
-2. توجه إلى `chrome://extensions/` وفعل **وضع المطور (Developer mode)**.
-3. انقر على **تحميل الإضافة غير المعبأة (Load unpacked)** واختر مجلد المشروع.
+**نسخه‌ی رسمی:** [فروشگاه وب کروم ← Void Galaxy](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij)
 
-#### 💖 الدعم والمساهمة
-- **Bitcoin (BSC/BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
-- **التبرع بالريال الإيراني (IRR):** [عبر موقع Donito](https://donito.me/u-b8wjr)
+**پیش از نصب امتحان کنید:** [minoodar.github.io/void](https://minoodar.github.io/void/) — نسخه‌ی وب که موسیقی محلی شما را با همان جلوه‌های کهکشانی پخش می‌کند.
+
+<details>
+<summary><b>نصب در حالت توسعه‌دهنده</b></summary>
+
+۱. مخزن `minoodar/Void-Galaxy` را کلون کنید یا فایل ZIP را دانلود و استخراج کنید.
+۲. به `chrome://extensions/` بروید و **Developer mode** را روشن کنید.
+۳. روی **Load unpacked** بزنید و پوشه‌ی پروژه را انتخاب کنید.
+
+</details>
+
+### 🪐 آنچه درون این جهان است
+
+#### 🆕 تب جدید «New Void»
+با باز کردن هر تب جدید، کامل‌ترین تب جدید جهان را می‌بینید. چهار گوی زنده دارد:
+
+- **امروز (Today):** نمای یک‌نگاه از روز شما همراه با مناسبت‌های هوشمند.
+- **اهداف (Goals):** هدف‌های بزرگ که کارهای روزانه به آن‌ها متصل‌اند.
+- **اکو (Echo):** فضایی آرام برای نوشتن افکار و پیام به خودِ آینده.
+- **لینک‌های پرکاربرد:** سایت‌های همیشگی‌تان فقط با یک نگاه.
+
+در پس‌زمینه، **چرخ نجومی ۱۳ صورت فلکی** بر پایه‌ی مختصات واقعی ستارگان (RA/Dec) و شامل **مارافسا (Ophiuchus)** و نشانگر اعتدال بهاری، آسمانی استثنایی و پرتحرک می‌سازد.
+
+#### 🎵 کهکشان موسیقی
+موسیقی را **به‌صورت محلی** و از فایل‌های خودتان پخش کنید، دقیقاً مثل [نسخه‌ی وب](https://minoodar.github.io/void/). آهنگ‌های شما به یک کهکشان مارپیچ تبدیل می‌شوند:
+
+- سیاه‌چاله‌ای در مرکز، بازوهای مارپیچی هم‌ریتم با موسیقی، دنباله‌دارها و جریان‌های ستاره و شکوفه‌های نور کیهانی.
+- ستاره‌دهی به هر آهنگ، جستجو در کتابخانه، پخش تصادفی، اکولایزر و تنظیمات کیفیت صدا.
+- کاور آلبوم در ۵ ثانیه‌ی ابتدا و انتهای هر آهنگ و با کلیک، درون سیاه‌چاله نمایش داده می‌شود.
+- شناسایی کلیدهای کنترلی پخش‌کننده‌های وب (مثل SoundCloud) و تنظیم خودکار کیفیت گرافیک.
+
+#### 📝 دیوار یادداشت‌های رنگی
+دفترچه‌ی شما یک **حافظه‌ی دوم** است که شبیه یک دیوار واقعی است.
+
+- هر یادداشت به یک **کاغذ رنگی** (مثل کاغذهای ۳M روی دیوار یا مانیتور) تبدیل می‌شود و مرتب چیده می‌شود.
+- یادداشت‌های روزانه و ایده‌ها کنار هم می‌مانند و به **فهرست کارها (To-Do)** وصل هستند.
+- **ورودی میکروفون** برای تبدیل گفتار به متن و غلط‌گیر فارسی و انگلیسی.
+- **ترجمه‌ی آنلاین** در دسترس شما.
+- **صفحات Markdown با امکانات کامل LLM:** هر صفحه را می‌توان به Markdown تبدیل و با ابزارهای هوش مصنوعی کار کرد. این ایده از یک انجمن دیگر الهام گرفته و در بخش [مجوز و حقوق](#license) به آن اشاره شده است.
+
+#### 🧠 گنجینه‌ی پرامپت‌ها
+مدیریت کامل پرامپت‌ها: ساخت، ویرایش، دسته‌بندی، ستاره‌دهی، **جستجوی فوری** و کپی با یک کلیک.
+
+#### 📚 مدیریت بوکمارک
+ستاره‌دهی و ارزیابی کیفیت، دسته‌بندی و **جستجوی فازی** (حتی بر اساس محتوا).
+
+#### ✅ کارها، اهداف و آتش‌بازی
+تفکیک کارها از اهداف کلان، اتصال هر کار به هدف با **وزن اختصاصی** و جشن پیروزی با **آتش‌بازی پویا** از ۳۰٪ تا ۱۰۰٪ پیشرفت.
+
+#### 🌍 مناسبت‌های هوشمند در هر نقطه‌ی جهان
+تقویم، **مناسبت‌ها و تعطیلات هر نقطه از جهان** را هوشمندانه نمایش می‌دهد.
+
+#### 🗣️ ۱۲ زبان
+بومی‌سازی کامل به ۱۲ زبان: انگلیسی، فارسی، چینی (ساده و سنتی)، پرتغالی، ترکی، اسپانیایی، آلمانی، فرانسوی، ژاپنی، روسی و عربی، با پشتیبانی کامل از چیدمان راست‌به‌چپ.
+
+#### 🛡️ حریم خصوصی در اولویت
+- **بدون سرور، بدون حساب کاربری، بدون آمار.** هیچ داده‌ای به جایی ارسال نمی‌شود.
+- **پشتیبان‌گیری محلی کامل** از بوکمارک‌ها، پرامپت‌ها، یادداشت‌ها، اهداف و To-Do در یک فایل JSON متعلق به خودتان.
+- همگام‌سازی اختیاری تنظیمات با کروم و بازیابی با یک کلیک.
+
+### 🧭 فلسفه
+نرم‌افزار باید مثل نگاه کردن به آسمان شب باشد: آرام، بی‌کران و متعلق به خودتان. بدون شلوغی، بدون تبلیغ. موسیقی دانلود یا برداشته نمی‌شود؛ فقط در مدار می‌چرخد.
 
 </div>
 
-</details>
+---
 
-<details>
-<summary><strong>⚖️ License, Attribution & AI-Assisted Development</strong></summary>
+<a id="zh-cn"></a>
 
-<br>
+## 🇨🇳 简体中文
 
-This project is an original concept initiated and directed by the project creator, who served as the **idea creator, product designer, and creative director**.
+> **Void Galaxy v42.1** 是一款免费开源的 Chrome 扩展，把普通浏览器变成宁静、美丽且完全私密的宇宙：悬浮轨道启动器、彩色便利贴记忆墙、提示词库、目标驱动的待办系统、真实星空星座新标签页，以及随歌曲呼吸的音乐银河。
+>
+> 纯 **Vanilla JavaScript**，**零依赖、零服务器、零追踪**，所有数据仅保存在您的设备上。
 
-Development was conducted with AI-assisted workflows:
-- **ChatGPT:** Creative direction, UI/UX ideation, visual concepts, and problem-solving.
-- **Google Gemini:** Initial core implementation.
-- **Claude:** Code development, refinement, debugging, and completion.
-- **Grok:** Parallel development, review, debugging, and final refinement.
+- **安装：** [Chrome 应用商店](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **在线试用：** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 “New Void” 新标签页：** 今日、目标、回声（Echo）、常用链接四大星球，搭配基于真实 RA/Dec 坐标的 **13 星座**星空轮（含蛇夫座）与春分点指示器。
+- **🎵 音乐银河：** 本地播放，黑洞、螺旋臂、彗星与星流随节拍律动；支持曲目星级、搜索、随机播放、均衡器，专辑封面会在每首歌的开头和结尾出现在黑洞中。
+- **📝 便利贴记忆墙：** 每条笔记都是一张像 3M 便利贴一样贴在墙上或显示器上的彩色纸条，并与待办事项联动；支持麦克风语音输入、在线翻译，以及带完整 LLM 工具的 Markdown 页面（灵感来自另一社区，详见许可部分）。
+- **🧠 提示词库：** 分类、星标、即时搜索、一键复制。
+- **📚 书签管理：** 星级评分、质量评估、分类，以及模糊与内容检索。
+- **✅ 待办与目标：** 任务关联带权重的目标，完成度 30%–100% 触发动态烟花。
+- **🌍 智能节日：** 日历智能显示世界任何地点的节日与纪念日。
+- **🗣️ 12 种语言：** 含从右至左布局。
+- **🛡️ 隐私：** 完全本地，一键 JSON 完整备份（书签、提示词、待办），数据绝不上传服务器。
 
-The project also incorporates or uses third-party technologies, including **Firecrawl AnyDoc** ([MIT License](https://github.com/firecrawl/anydoc)), **Google Translate**, and **Google Speech-to-Text**.
+---
 
-All third-party software, services, trademarks, and copyrights remain subject to their respective licenses and terms. No ownership is claimed over third-party components or services.
+<a id="zh-tw"></a>
 
-</details>
+## 🇹🇼 繁體中文
+
+> **Void Galaxy v42.1** 是一款免費開源的 Chrome 擴充功能，把一般瀏覽器變成寧靜、美麗且完全私密的宇宙：懸浮軌道啟動器、彩色便利貼記憶牆、提示詞庫、目標導向的待辦系統、真實星空星座新分頁，以及隨歌曲呼吸的音樂銀河。
+>
+> 純 **Vanilla JavaScript**，**零相依、零伺服器、零追蹤**，所有資料只存放在您的裝置上。
+
+- **安裝：** [Chrome 線上應用程式商店](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **線上體驗：** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 「New Void」新分頁：** 今日、目標、回聲（Echo）、常用連結四大星球，搭配依真實 RA/Dec 座標打造的 **13 星座**星空輪（含蛇夫座）與春分點指示器。
+- **🎵 音樂銀河：** 本機播放，黑洞、螺旋臂、彗星與星流隨節奏律動；支援曲目星等、搜尋、隨機播放、等化器，專輯封面會在每首歌的開頭與結尾出現在黑洞中。
+- **📝 便利貼記憶牆：** 每則筆記都是貼在牆上或螢幕上、如 3M 便利貼般的彩色紙條，並與待辦事項連動；支援麥克風語音輸入、線上翻譯，以及具備完整 LLM 工具的 Markdown 頁面（靈感來自另一個社群，詳見授權章節）。
+- **🧠 提示詞庫：** 分類、星標、即時搜尋、一鍵複製。
+- **📚 書籤管理：** 星等評分、品質評估、分類，以及模糊與內容搜尋。
+- **✅ 待辦與目標：** 任務連結具權重的目標，完成度 30%–100% 觸發動態煙火。
+- **🌍 智慧節日：** 行事曆智慧顯示世界任何地點的節日與紀念日。
+- **🗣️ 12 種語言：** 含由右至左版面。
+- **🛡️ 隱私：** 完全本機，一鍵 JSON 完整備份（書籤、提示詞、待辦），資料絕不上傳至伺服器。
+
+---
+
+<a id="portuguese"></a>
+
+## 🇧🇷 Português
+
+> **Void Galaxy v42.1** é uma extensão gratuita e de código aberto para o Chrome que transforma o navegador em um universo calmo, bonito e totalmente privado: lançador orbital flutuante, mural de notas adesivas coloridas, cofre de prompts, sistema de tarefas e metas, nova aba com o céu real das constelações e uma galáxia musical que respira com as suas músicas.
+>
+> Feita em **Vanilla JavaScript** puro: **zero dependências, zero servidores, zero rastreamento.** Tudo fica no seu dispositivo.
+
+- **Instalar:** [Chrome Web Store](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **Demo online:** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 Nova aba "New Void":** quatro orbes (Hoje, Metas, Echo e Links rápidos) com uma roda do céu real de **13 constelações** (inclusive Ophiuchus), baseada em coordenadas RA/Dec e com indicador do equinócio.
+- **🎵 Galáxia musical:** reprodução local com buraco negro, braços espirais, cometas e fluxos de estrelas no ritmo; avaliação por estrelas, busca, aleatório, equalizador e capa do álbum dentro do buraco negro no início e no fim de cada faixa.
+- **📝 Mural de notas:** cada nota vira um papel colorido, como os post-its da 3M na parede ou no monitor, conectado às tarefas; ditado por microfone, tradução online e páginas Markdown com ferramentas LLM completas (ideia inspirada em outra comunidade, creditada na seção de licença).
+- **🧠 Cofre de prompts:** categorias, estrelas, busca instantânea e cópia com um clique.
+- **📚 Favoritos:** avaliação, categorias e busca fuzzy, inclusive por conteúdo.
+- **✅ Tarefas e metas:** tarefas ligadas a metas com peso e fogos de artifício dinâmicos de 30% a 100%.
+- **🌍 Datas inteligentes:** feriados e ocasiões de qualquer lugar do mundo no calendário.
+- **🗣️ 12 idiomas**, incluindo layouts da direita para a esquerda.
+- **🛡️ Privacidade:** 100% local, backup JSON completo (favoritos, prompts, tarefas); nenhum dado é enviado a servidores.
+
+---
+
+<a id="turkish"></a>
+
+## 🇹🇷 Türkçe
+
+> **Void Galaxy v42.1**, sıradan bir tarayıcıyı sakin, güzel ve tamamen özel bir evrene dönüştüren ücretsiz ve açık kaynaklı bir Chrome eklentisidir: yüzen yörünge başlatıcı, renkli yapışkan not duvarı, prompt kasası, hedef odaklı yapılacaklar sistemi, gerçek gökyüzü takımyıldızlı yeni sekme ve şarkılarınızla nefes alan bir müzik galaksisi.
+>
+> Saf **Vanilla JavaScript**: **sıfır bağımlılık, sıfır sunucu, sıfır izleme.** Her şey yalnızca cihazınızda kalır.
+
+- **Kurulum:** [Chrome Web Mağazası](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **Canlı demo:** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 "New Void" yeni sekmesi:** Bugün, Hedefler, Echo ve Hızlı Bağlantılar küreleri; gerçek RA/Dec koordinatlarına dayanan **13 takımyıldızlı** gökyüzü çarkı (Ophiuchus dahil) ve ilkbahar ekinoksu göstergesi.
+- **🎵 Müzik galaksisi:** Yerel çalma; ritimle hareket eden kara delik, spiral kollar, kuyruklu yıldızlar ve yıldız akışları; yıldız puanı, arama, karışık çalma, ekolayzer ve her parçanın başında ve sonunda kara deliğin içinde albüm kapağı.
+- **📝 Not duvarı:** Her not, duvara ya da monitöre yapıştırılmış 3M kâğıtları gibi renkli bir kâğıda dönüşür ve yapılacaklarla bağlantılıdır; mikrofonla sesli yazma, çevrimiçi çeviri ve tam LLM araçlı Markdown sayfaları (fikir başka bir topluluktan esinlenmiştir, lisans bölümünde belirtilmiştir).
+- **🧠 Prompt kasası:** Kategoriler, yıldızlar, anında arama, tek tıkla kopyalama.
+- **📚 Yer imleri:** Puanlama, kategoriler ve içerik tabanlı bulanık arama.
+- **✅ Görevler ve hedefler:** Ağırlıklı hedef bağlantısı ve %30'dan %100'e dinamik havai fişekler.
+- **🌍 Akıllı özel günler:** Dünyanın her yerinin tatil ve özel günleri takvimde.
+- **🗣️ 12 dil**, sağdan sola düzen dahil.
+- **🛡️ Gizlilik:** %100 yerel, tam JSON yedekleme (yer imleri, promptlar, görevler); hiçbir veri sunucuya gönderilmez.
+
+---
+
+<a id="spanish"></a>
+
+## 🇪🇸 Español
+
+> **Void Galaxy v42.1** es una extensión gratuita y de código abierto para Chrome que convierte tu navegador en un universo tranquilo, hermoso y totalmente privado: lanzador orbital flotante, muro de notas adhesivas de colores, bóveda de prompts, sistema de tareas y metas, nueva pestaña con el cielo real de las constelaciones y una galaxia musical que respira con tus canciones.
+>
+> Hecha en **Vanilla JavaScript** puro: **cero dependencias, cero servidores, cero rastreo.** Todo permanece en tu dispositivo.
+
+- **Instalar:** [Chrome Web Store](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **Demo en línea:** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 Nueva pestaña "New Void":** cuatro orbes (Hoy, Metas, Echo y Enlaces rápidos) con una rueda de cielo real de **13 constelaciones** (con Ofiuco), basada en coordenadas RA/Dec e indicador del equinoccio.
+- **🎵 Galaxia musical:** reproducción local con agujero negro, brazos espirales, cometas y corrientes de estrellas al ritmo; valoración por estrellas, búsqueda, aleatorio, ecualizador y portada del álbum dentro del agujero negro al inicio y al final de cada pista.
+- **📝 Muro de notas:** cada nota se convierte en un papel de color, como los post-it de 3M en la pared o el monitor, conectado a tus tareas; dictado por micrófono, traducción en línea y páginas Markdown con herramientas LLM completas (idea inspirada en otra comunidad, acreditada en la sección de licencia).
+- **🧠 Bóveda de prompts:** categorías, estrellas, búsqueda instantánea y copia con un clic.
+- **📚 Marcadores:** valoración, categorías y búsqueda difusa, incluso por contenido.
+- **✅ Tareas y metas:** tareas vinculadas a metas con peso y fuegos artificiales dinámicos del 30 % al 100 %.
+- **🌍 Fechas inteligentes:** festivos y efemérides de cualquier lugar del mundo en el calendario.
+- **🗣️ 12 idiomas**, con diseños de derecha a izquierda.
+- **🛡️ Privacidad:** 100 % local, copia de seguridad JSON completa (marcadores, prompts, tareas); ningún dato se envía a servidores.
+
+---
+
+<a id="german"></a>
+
+## 🇩🇪 Deutsch
+
+> **Void Galaxy v42.1** ist eine kostenlose Open-Source-Chrome-Erweiterung, die den Browser in ein ruhiges, schönes und vollständig privates Universum verwandelt: schwebender Orbit-Launcher, Pinnwand aus bunten Haftnotizen, Prompt-Tresor, zielorientiertes To-do-System, Neuer-Tab mit echtem Sternenhimmel und eine Musikgalaxie, die mit Ihren Songs atmet.
+>
+> Reines **Vanilla JavaScript**: **keine Abhängigkeiten, keine Server, kein Tracking.** Alles bleibt auf Ihrem Gerät.
+
+- **Installation:** [Chrome Web Store](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **Live-Demo:** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 „New Void“-Neuer-Tab:** vier Orbs (Heute, Ziele, Echo, Schnelllinks) mit einem Sternenrad aus **13 Sternbildern** (inkl. Schlangenträger) auf Basis echter RA/Dec-Koordinaten samt Frühlingspunkt-Anzeige.
+- **🎵 Musikgalaxie:** lokale Wiedergabe mit Schwarzem Loch, Spiralarmen, Kometen und Sternströmen im Takt; Sternebewertung, Suche, Zufallswiedergabe, Equalizer und Albumcover im Schwarzen Loch am Anfang und Ende jedes Titels.
+- **📝 Notizwand:** Jede Notiz wird zu einem farbigen Zettel wie 3M-Haftnotizen an Wand oder Monitor und ist mit Ihren Aufgaben verbunden; Spracheingabe per Mikrofon, Online-Übersetzung und Markdown-Seiten mit vollem LLM-Werkzeugkasten (Idee aus einer anderen Community, im Lizenzabschnitt genannt).
+- **🧠 Prompt-Tresor:** Kategorien, Sterne, Sofortsuche, Kopieren mit einem Klick.
+- **📚 Lesezeichen:** Bewertung, Kategorien und unscharfe Suche, auch inhaltsbasiert.
+- **✅ Aufgaben & Ziele:** gewichtete Zielverknüpfung und dynamisches Feuerwerk von 30 % bis 100 %.
+- **🌍 Intelligente Anlässe:** Feiertage und Anlässe an jedem Ort der Welt im Kalender.
+- **🗣️ 12 Sprachen**, inklusive Rechts-nach-links-Layouts.
+- **🛡️ Datenschutz:** 100 % lokal, vollständiges JSON-Backup (Lesezeichen, Prompts, Aufgaben); keine Daten werden an Server gesendet.
+
+---
+
+<a id="french"></a>
+
+## 🇫🇷 Français
+
+> **Void Galaxy v42.1** est une extension Chrome gratuite et open source qui transforme votre navigateur en un univers calme, beau et entièrement privé : lanceur orbital flottant, mur de notes adhésives colorées, coffre à prompts, système de tâches et d'objectifs, nouvel onglet avec le vrai ciel des constellations et une galaxie musicale qui respire avec vos morceaux.
+>
+> Écrite en **Vanilla JavaScript** pur : **zéro dépendance, zéro serveur, zéro pistage.** Tout reste sur votre appareil.
+
+- **Installer :** [Chrome Web Store](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **Démo en ligne :** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 Nouvel onglet « New Void » :** quatre orbes (Aujourd'hui, Objectifs, Echo, Liens rapides) avec une roue du ciel réel à **13 constellations** (dont Ophiuchus), fondée sur de vraies coordonnées RA/Dec, avec indicateur de l'équinoxe.
+- **🎵 Galaxie musicale :** lecture locale avec trou noir, bras spiraux, comètes et flux d'étoiles au rythme ; notation par étoiles, recherche, lecture aléatoire, égaliseur et pochette d'album dans le trou noir au début et à la fin de chaque piste.
+- **📝 Mur de notes :** chaque note devient un papier coloré, comme les post-it 3M sur un mur ou un écran, relié à vos tâches ; dictée au micro, traduction en ligne et pages Markdown avec outils LLM complets (idée inspirée d'une autre communauté, créditée dans la section licence).
+- **🧠 Coffre à prompts :** catégories, étoiles, recherche instantanée, copie en un clic.
+- **📚 Favoris :** notation, catégories et recherche floue, y compris par contenu.
+- **✅ Tâches et objectifs :** tâches liées à des objectifs pondérés et feux d'artifice dynamiques de 30 % à 100 %.
+- **🌍 Occasions intelligentes :** jours fériés et événements de n'importe quel lieu du monde dans le calendrier.
+- **🗣️ 12 langues**, y compris les mises en page de droite à gauche.
+- **🛡️ Confidentialité :** 100 % local, sauvegarde JSON complète (favoris, prompts, tâches) ; aucune donnée n'est envoyée à un serveur.
+
+---
+
+<a id="japanese"></a>
+
+## 🇯🇵 日本語
+
+> **Void Galaxy v42.1** は、ブラウザを静かで美しく完全にプライベートな宇宙に変える、無料のオープンソース Chrome 拡張機能です。浮遊するオービタルランチャー、カラフルな付箋の記憶ウォール、プロンプト金庫、目標連動のToDo、実際の星空を使った新しいタブ、そして曲と一緒に呼吸するミュージックギャラクシーを備えています。
+>
+> 純粋な **Vanilla JavaScript**。**依存ゼロ、サーバーゼロ、トラッキングゼロ。** すべてのデータはお使いのデバイス内にのみ保存されます。
+
+- **インストール:** [Chrome ウェブストア](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **オンラインデモ:** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕「New Void」新しいタブ:** 今日・目標・Echo・クイックリンクの4つのオーブと、実際の RA/Dec 座標に基づく **13星座**（へびつかい座を含む）の星空ホイール、春分点インジケーター。
+- **🎵 ミュージックギャラクシー:** ローカル再生に合わせて、ブラックホール、渦巻く腕、彗星、星の流れがリズムで動きます。星評価、検索、シャッフル、イコライザー、各曲の冒頭と終わりにブラックホール内へアルバムカバーを表示。
+- **📝 付箋メモウォール:** メモはすべて壁やモニターに貼った3M付箋のようなカラーペーパーになり、ToDoと連携。マイク音声入力、オンライン翻訳、LLMツール完備のMarkdownページ（別のコミュニティに着想を得たもので、ライセンス欄に明記）。
+- **🧠 プロンプト金庫:** カテゴリ、スター、即時検索、ワンクリックコピー。
+- **📚 ブックマーク:** 評価、カテゴリ、内容も対象のあいまい検索。
+- **✅ ToDoと目標:** 重み付きの目標に連動し、達成度30%〜100%で花火が上がります。
+- **🌍 スマート記念日:** 世界中のあらゆる場所の祝日や記念日をカレンダーに表示。
+- **🗣️ 12言語**（右から左のレイアウトにも対応）。
+- **🛡️ プライバシー:** 100%ローカル。ブックマーク、プロンプト、ToDoをJSONで完全バックアップ。データがサーバーへ送信されることはありません。
+
+---
+
+<a id="russian"></a>
+
+## 🇷🇺 Русский
+
+> **Void Galaxy v42.1** — бесплатное расширение Chrome с открытым кодом, превращающее браузер в спокойную, красивую и полностью приватную вселенную: парящий орбитальный лаунчер, стена цветных стикеров, хранилище промптов, система задач и целей, новая вкладка с настоящим звёздным небом и музыкальная галактика, которая дышит вместе с вашими треками.
+>
+> Чистый **Vanilla JavaScript**: **ноль зависимостей, ноль серверов, ноль слежки.** Всё хранится только на вашем устройстве.
+
+- **Установка:** [Chrome Web Store](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **Онлайн-демо:** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 Новая вкладка «New Void»:** четыре сферы (Сегодня, Цели, Echo, Быстрые ссылки) и колесо неба из **13 созвездий** (включая Змееносца) на основе настоящих координат RA/Dec с индикатором точки весеннего равноденствия.
+- **🎵 Музыкальная галактика:** локальное воспроизведение с чёрной дырой, спиральными рукавами, кометами и потоками звёзд в такт музыке; оценка звёздами, поиск, случайный порядок, эквалайзер и обложка альбома внутри чёрной дыры в начале и конце каждого трека.
+- **📝 Стена заметок:** каждая заметка становится цветным листочком, как стикеры 3M на стене или мониторе, и связана со списком задач; голосовой ввод с микрофона, онлайн-перевод и Markdown-страницы с полным набором LLM-инструментов (идея вдохновлена другим сообществом и указана в разделе лицензии).
+- **🧠 Хранилище промптов:** категории, звёзды, мгновенный поиск, копирование в один клик.
+- **📚 Закладки:** оценка, категории и нечёткий поиск, в том числе по содержимому.
+- **✅ Задачи и цели:** привязка к целям с весом и динамический фейерверк от 30% до 100%.
+- **🌍 Умные события:** праздники и памятные даты любой точки мира в календаре.
+- **🗣️ 12 языков**, включая раскладки справа налево.
+- **🛡️ Приватность:** 100% локально, полная резервная копия JSON (закладки, промпты, задачи); данные никогда не отправляются на серверы.
+
+---
+
+<a id="arabic"></a>
+
+<div dir="rtl">
+
+## 🇸🇦 العربية
+
+> **Void Galaxy الإصدار 42.1** إضافة Chrome مجانية ومفتوحة المصدر تحوّل متصفحك إلى كون هادئ وجميل وخاص تمامًا: مشغّل مداري عائم، وجدار ملاحظات لاصقة ملوّنة، وخزنة مطالبات، ونظام مهام وأهداف، وتبويب جديد بسماء الأبراج الحقيقية، ومجرة موسيقية تتنفس مع أغانيك.
+>
+> مكتوبة بلغة **Vanilla JavaScript** خالصة: **بلا اعتماديات، بلا خوادم، بلا تتبّع.** كل شيء يبقى على جهازك.
+
+- **التثبيت:** [متجر Chrome الإلكتروني](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij) · **تجربة مباشرة:** [minoodar.github.io/void](https://minoodar.github.io/void/)
+- **🆕 تبويب «New Void»:** أربع كرات (اليوم، الأهداف، Echo، الروابط السريعة) مع عجلة سماء من **13 برجًا** (تشمل الحوّاء Ophiuchus) مبنية على إحداثيات RA/Dec الحقيقية ومؤشر الاعتدال الربيعي.
+- **🎵 المجرة الموسيقية:** تشغيل محلي مع ثقب أسود وأذرع حلزونية ومذنّبات وتيارات نجوم تتحرك مع الإيقاع؛ تقييم بالنجوم، بحث، تشغيل عشوائي، معادل صوتي، وغلاف الألبوم داخل الثقب الأسود في بداية كل مقطوعة ونهايتها.
+- **📝 جدار الملاحظات:** تتحول كل ملاحظة إلى ورقة ملوّنة مثل ملاحظات 3M على الجدار أو الشاشة، ومرتبطة بقائمة المهام؛ إدخال صوتي بالميكروفون، وترجمة عبر الإنترنت، وصفحات Markdown بأدوات LLM كاملة (فكرة مستوحاة من مجتمع آخر ومذكورة في قسم الترخيص).
+- **🧠 خزنة المطالبات:** تصنيفات، نجوم، بحث فوري، ونسخ بنقرة واحدة.
+- **📚 الإشارات المرجعية:** تقييم، تصنيف، وبحث تقريبي يشمل المحتوى.
+- **✅ المهام والأهداف:** ربط المهام بأهداف ذات وزن وألعاب نارية ديناميكية من 30% إلى 100%.
+- **🌍 مناسبات ذكية:** عطلات ومناسبات أي مكان في العالم تظهر في التقويم.
+- **🗣️ 12 لغة** مع دعم كامل للاتجاه من اليمين إلى اليسار.
+- **🛡️ الخصوصية:** محلي 100%، ونسخ احتياطي JSON كامل (الإشارات والمطالبات والمهام)، ولا تُرسل أي بيانات إلى أي خادم.
+
+</div>
+
+---
+
+## 💖 Support & Contribute
+
+Void Galaxy is an independent, open-source project from a solo developer in Iran. If it brings a little calm to your day, your support keeps the galaxy expanding.
+
+- **Crypto (BSC / BEP20):** `0x3C9e8a1Ae29755154516695683d82e5e02589346`
+- **Iranian Rial (IRR):** [Donate via Donito](https://donito.me/u-b8wjr)
+- ⭐ Star the repo, 🐞 open an issue, 🌍 improve a translation, or leave a review on the [Chrome Web Store](https://chromewebstore.google.com/detail/bcjfadkelankleelcmikhbnacbjjapij).
+
+---
+
+<a id="license"></a>
+
+## ⚖️ License, Attribution & AI-Assisted Development
+
+This project is an original concept initiated and directed by its creator, who served as **idea creator, product designer and creative director**.
+
+Development used AI-assisted workflows:
+
+- **ChatGPT:** creative direction, UI/UX ideation, visual concepts and problem-solving.
+- **Google Gemini:** initial core implementation.
+- **Claude:** code development, refinement, debugging and completion.
+- **Grok:** parallel development, review, debugging and final refinement.
+
+The project also incorporates or uses third-party technologies and community work, including **Firecrawl AnyDoc** ([MIT License](https://github.com/firecrawl/anydoc)), which inspired the Markdown-page and LLM tooling in the notepad, as well as **Google Translate** (online translation) and **Google Speech-to-Text** (microphone input).
+
+All third-party software, services, trademarks and copyrights remain subject to their respective licenses and terms. No ownership is claimed over third-party components or services.
+
+<div align="center">
+
+*Made with ❤️ under a billion stars.* 🌌
+
+</div>
