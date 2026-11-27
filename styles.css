@@ -1647,7 +1647,15 @@ transition: all 0.25s var(--ease-premium); position: relative; overflow: hidden;
 }
 #ai-search-panel.active::before { opacity: 1; animation: travelLight 8s linear infinite; }
 @keyframes travelLight { from { offset-distance: 0%; } to { offset-distance: 100%; } }
-#ai-search-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 13px; outline: none; transition: border 0.2s var(--ease-premium); font-family: inherit; text-align: center; }
+.ai-bookmark-search-row { display: flex; align-items: stretch; gap: 6px; }
+#ai-search-input { flex: 1; min-width: 0; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 13px; outline: none; transition: border 0.2s var(--ease-premium); font-family: inherit; text-align: center; }
+#ai-search-add-bookmark { order: -1; width: 38px; min-width: 38px; border: 1px solid rgba(var(--accent-search), 0.28); border-radius: 10px; color: rgba(186, 230, 253, 0.78); background: rgba(var(--accent-search), 0.07); display: grid; place-items: center; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+#ai-search-add-bookmark svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+#ai-search-add-bookmark:hover { color: #e0f2fe; background: rgba(var(--accent-search), 0.2); border-color: rgba(var(--accent-search), 0.65); box-shadow: 0 0 12px rgba(var(--accent-search), 0.2); transform: translateY(-1px); }
+#ai-search-add-bookmark:active { transform: scale(.96); }
+#ai-search-add-bookmark:focus-visible { outline: 2px solid rgba(var(--accent-search), .85); outline-offset: 2px; }
+#ai-search-panel[dir="rtl"] .ai-bookmark-search-row { flex-direction: row-reverse; }
+#ai-search-panel[dir="rtl"] #ai-search-add-bookmark { order: 1; }
 #ai-search-input:focus {
   border-color: rgba(var(--accent-search), 0.75);
   background: rgba(0, 0, 0, 0.6);

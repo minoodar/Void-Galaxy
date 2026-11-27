@@ -609,7 +609,10 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
       <div class="ai-cat-grid" id="ai-search-cat-grid"></div>
     </div>
     <div class="ai-search-section-label" id="ai-bookmark-search-label"></div>
-    <input type="text" id="ai-search-input" dir="auto" autocomplete="off" />
+    <div class="ai-bookmark-search-row">
+      <button type="button" id="ai-search-add-bookmark" aria-label="Add current page bookmark" title="Add current page bookmark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <input type="text" id="ai-search-input" dir="auto" autocomplete="off" />
+    </div>
     <ul id="ai-search-results"></ul>
     <button type="button" class="ai-web-search-toggle" id="ai-web-search-toggle" aria-expanded="false">
       <span class="ai-web-search-toggle-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16.2 16.2L21 21"/></svg></span>
@@ -855,6 +858,7 @@ const clockPanel = document.createElement('div'); clockPanel.id = 'ai-clock-pane
     todoQuote: todoPanel.querySelector('#ai-todo-quote'),
     todoQuoteSourceTabs: todoPanel.querySelector('#ai-todo-quote-source-tabs'),
     searchInput: searchPanel.querySelector('#ai-search-input'),
+    searchAddBookmark: searchPanel.querySelector('#ai-search-add-bookmark'),
     searchResults: searchPanel.querySelector('#ai-search-results'),
     searchCatToggle: searchPanel.querySelector('#ai-search-cat-toggle'),
     searchCatToggleLabel: searchPanel.querySelector('#ai-search-cat-toggle-label'),
@@ -1221,6 +1225,8 @@ function updateUITexts() {
     uiEls.todoTabGoal.textContent = t('todoTabGoals');
 
     uiEls.searchInput.placeholder = t('searchPlaceholder');
+    uiEls.searchAddBookmark.title = currentLang === 'fa' ? 'افزودن این صفحه به بوکمارک‌ها' : currentLang === 'ar' ? 'أضف هذه الصفحة إلى الإشارات المرجعية' : 'Add this page to bookmarks';
+    uiEls.searchAddBookmark.setAttribute('aria-label', uiEls.searchAddBookmark.title);
     if (uiEls.bookmarkSearchLabel) uiEls.bookmarkSearchLabel.textContent = t('bookmarkSearchLabel');
     if (uiEls.webSearchToggleLabel) uiEls.webSearchToggleLabel.textContent = t('webSearchToggleLabel');
     if (uiEls.webSearchSectionLabel) uiEls.webSearchSectionLabel.textContent = t('webSearchSectionLabel');
@@ -5998,6 +6004,12 @@ dot.className = 'ai-dash-dot' + (status === 'near' ? ' is-now' : '') + (isExpire
   }
 
   uiEls.searchInput.addEventListener('input', () => renderSearchResults(uiEls.searchInput.value));
+  uiEls.searchAddBookmark.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllPanelsExcept('');
+    if (!isOpen) { isOpen = true; root.classList.add('open'); }
+    addNodeBtn.click();
+  });
   uiEls.searchInput.addEventListener('keydown', (e) => {
     e.stopPropagation();
     if (e.key === 'Escape') { e.preventDefault(); searchToggleDot.click(); }
